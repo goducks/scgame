@@ -1,8 +1,11 @@
 import sys
 import sdl2.ext
+import ctimer as ct
 
 def runLoop():
-    # out main game loop 
+    loopTimer = ct.CTimer()
+
+    # our main game loop 
 
     # read remote inputs 
     # ...
@@ -12,8 +15,8 @@ def runLoop():
     for event in events:
         if event.type == sdl2.SDL_QUIT:
             return False
-        else:
-            print "sdl event type: %s" % event.type
+        # else:
+            # print "sdl event type: %s" % event.type
    
     # update game state
     # ...
