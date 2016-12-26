@@ -1,37 +1,61 @@
 import sys
 import sdl2.ext
 
-print "--begin--"
+def runLoop():
+    # out main game loop 
 
-RESOURCES = sdl2.ext.Resources(__file__, "resources")
+    # read remote inputs 
+    # ...
 
-sdl2.ext.init()
+    # read local inputs & events
+    events = sdl2.ext.get_events()
+    for event in events:
+        if event.type == sdl2.SDL_QUIT:
+            return False
+        else:
+            print "sdl event type: %s" % event.type
+   
+    # update game state
+    # ...
 
-# load a sprite directly from image, note can also manually create one, but this factory will
-# do heavy lifting for now
-factory = sdl2.ext.SpriteFactory(sdl2.ext.SOFTWARE)
-# debug check of supported image formats
-# formats = sdl2.ext.get_image_formats()
-# print formats
-sprite = factory.from_image(RESOURCES.get_path("IMG_0013.bmp"))
+    # send local state to remotes    
 
-# create window based on image size
-width = sprite.size[0]
-height = sprite.size[1]
-window = sdl2.ext.Window("Hello World!", size=(width, height))
-window.show()
+    # render or whatever
 
-# create a renderer
-spriterenderer = factory.create_sprite_render_system(window)
-spriterenderer.render(sprite)
+    return True
 
-# this is a dummy even processor to keep the application running "forever" --
-# here's where we'll make our own game loop even processor. for now, this runs
-# forever until you hit CTRL-C in the python window or close the app window
-processor = sdl2.ext.TestEventProcessor()
-processor.run(window)
+def main():
+    print "--begin game--"
 
-# cleanup
-sdl2.ext.quit()
+    RESOURCES = sdl2.ext.Resources(__file__, "resources")
+    sdl2.ext.init()
 
-print "--end--"
+    # load a sprite directly from image, note: can also manually 
+    # create one, but this factory will do heavy lifting for now
+    factory = sdl2.ext.SpriteFactory(sdl2.ext.SOFTWARE)
+    # debug check of supported image formats
+    # formats = sdl2.ext.get_image_formats()
+    # print formats
+    sprite = factory.from_image(RESOURCES.get_path("IMG_0013.bmp"))
+
+    # create window based on image size(tuple)
+    width = sprite.size[0]
+    height = sprite.size[1]
+    window = sdl2.ext.Window("Hello World!", size=(width, height))
+    window.show()
+
+    # create a sprite renderer
+    spriterenderer = factory.create_sprite_render_system(window)
+    spriterenderer.render(sprite)
+
+    running = True
+    while running:
+        running = runLoop()
+
+    # cleanup
+    sdl2.ext.quit()
+
+    print "--end game--"
+
+if __name__ == "__main__":
+    main()
