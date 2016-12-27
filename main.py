@@ -1,4 +1,5 @@
-import sys
+# small test change
+
 import sdl2.ext
 import ctimer as ct
 
@@ -21,7 +22,7 @@ def runLoop():
     # update game state
     # ...
 
-    # send local state to remotes    
+    # send local state to remotes
 
     # render or whatever
 
