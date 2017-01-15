@@ -3,6 +3,14 @@
 import sdl2.ext
 import ctimer as ct
 
+class SoftwareRenderer(sdl2.ext.SoftwareSpriteRenderSystem):
+    def __init__(self, window):
+        super(SoftwareRenderer, self).__init__(window)
+
+    def render(self, components):
+        sdl2.ext.fill(self.surface, sdl2.ext.Color(0, 0, 0))
+        super(SoftwareRenderer, self).render(components)
+
 class Player(sdl2.ext.Entity):
     def __init__(self, world, sprite, posx=0, posy=0):
         self.sprite = sprite
@@ -39,28 +47,24 @@ def main():
     RESOURCES = sdl2.ext.Resources(__file__, "resources")
     sdl2.ext.init()
 
-    # load a sprite directly from image, note: can also manually 
-    # create one, but this factory will do heavy lifting for now
-    factory = sdl2.ext.SpriteFactory(sdl2.ext.SOFTWARE)
-    # debug check of supported image formats
-    # formats = sdl2.ext.get_image_formats()
-    # print formats
-    sprite = factory.from_color(sdl2.ext.Color(255, 255, 255), size=(50, 50))
-
-
     # create window based on image size(tuple)
     window = sdl2.ext.Window("Space Invaders", size=(500, 800))
     window.show()
 
     # create a sprite renderer
-    spriterenderer = factory.create_sprite_render_system(window)
-    spriterenderer.render(sprite)
+    spriterenderer = SoftwareRenderer(window)
 
     # create world
     world = sdl2.ext.World()
     world.add_system(spriterenderer)
 
-    player1 = Player(world, sprite, 100, 0)
+    # load a sprite directly from image, note: can also manually
+    # create one, but this factory will do heavy lifting for now
+    factory = sdl2.ext.SpriteFactory(sdl2.ext.SOFTWARE)
+    # debug check of supported image formats
+    # print formats
+    sprite = factory.from_color(sdl2.ext.Color(255, 255, 255), size=(50, 50))
+    player1 = Player(world, sprite, 0, 0)
 
 
     running = True
