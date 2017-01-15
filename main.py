@@ -3,6 +3,11 @@
 import sdl2.ext
 import ctimer as ct
 
+class Player(sdl2.ext.Entity):
+    def __init__(self, world, sprite, posx=0, posy=0):
+        self.sprite = sprite
+        self.sprite.position = posx, posy
+
 def runLoop():
     loopTimer = ct.CTimer()
 
@@ -40,17 +45,23 @@ def main():
     # debug check of supported image formats
     # formats = sdl2.ext.get_image_formats()
     # print formats
-    sprite = factory.from_image(RESOURCES.get_path("IMG_0013.bmp"))
+    sprite = factory.from_color(sdl2.ext.Color(255, 255, 255), size=(50, 50))
+
 
     # create window based on image size(tuple)
-    width = sprite.size[0]
-    height = sprite.size[1]
-    window = sdl2.ext.Window("Hello World!", size=(width, height))
+    window = sdl2.ext.Window("Space Invaders", size=(500, 800))
     window.show()
 
     # create a sprite renderer
     spriterenderer = factory.create_sprite_render_system(window)
     spriterenderer.render(sprite)
+
+    # create world
+    world = sdl2.ext.World()
+    world.add_system(spriterenderer)
+
+    player1 = Player(world, sprite, 100, 0)
+
 
     running = True
     while running:
