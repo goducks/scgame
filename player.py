@@ -1,4 +1,3 @@
-import sdl2
 import sdl2.ext
 
 class Player(sdl2.ext.Entity):

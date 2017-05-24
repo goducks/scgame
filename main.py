@@ -48,7 +48,7 @@ def main():
     RESOURCES = sdl2.ext.Resources(__file__, "resources")
     sdl2.ext.init()
 
-    # create window based on image size(tuple)
+    # create window
     window = sdl2.ext.Window("Space Invaders", size=(width, height))
     window.show()
 
