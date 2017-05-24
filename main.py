@@ -1,11 +1,12 @@
 import sdl2.ext
 import ctimer as ct
 import player as pl
+import movement as mov
 
 width = 600
 height = 800
-playerwidth = width/12
-playerheight = height/32
+playerwidth = width/9
+playerheight = height/28
 white = sdl2.ext.Color(255, 255, 255)
 
 class SoftwareRenderer(sdl2.ext.SoftwareSpriteRenderSystem):
@@ -16,7 +17,7 @@ class SoftwareRenderer(sdl2.ext.SoftwareSpriteRenderSystem):
         sdl2.ext.fill(self.surface, sdl2.ext.Color(0, 0, 0))
         super(SoftwareRenderer, self).render(components)
 
-def runLoop():
+def runLoop(player):
     loopTimer = ct.CTimer()
 
     # our main game loop 
@@ -30,8 +31,7 @@ def runLoop():
         if event.type == sdl2.SDL_QUIT:
             return False
             break
-        # else:
-            # print "sdl event type: %s" % event.type
+        player.getInput(event)
    
     # update game state
     # ...
@@ -55,21 +55,26 @@ def main():
     # create a sprite renderer
     spriterenderer = SoftwareRenderer(window)
 
+    # create a movement system
+    movementsystem = mov.MovementSystem(0, 0, width, height)
+
     # create world
     world = sdl2.ext.World()
     world.add_system(spriterenderer)
+    world.add_system(movementsystem)
 
     # load a sprite directly from image, note: can also manually
     # create one, but this factory will do heavy lifting for now
     factory = sdl2.ext.SpriteFactory(sdl2.ext.SOFTWARE)
     # create player sprite and player object
     sprite = factory.from_color(white, size=(playerwidth, playerheight))
-    player1 = pl.Player(world, sprite, (width/2) - (playerheight + playerheight/2), (height - playerheight))
+    player1 = pl.Player(world, sprite, (width/2) - (playerheight + playerheight/2), (height - playerheight - 10))
 
 
     running = True
     while running:
-        running = runLoop()
+        running = runLoop(player1)
+        sdl2.SDL_Delay(10)
         world.process()
 
     # cleanup
