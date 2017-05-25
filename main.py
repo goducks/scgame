@@ -1,6 +1,12 @@
-#testagain
 import sdl2.ext
 import ctimer as ct
+import player as pl
+
+width = 600
+height = 800
+playerwidth = width/12
+playerheight = height/32
+white = sdl2.ext.Color(255, 255, 255)
 
 class SoftwareRenderer(sdl2.ext.SoftwareSpriteRenderSystem):
     def __init__(self, window):
@@ -9,11 +15,6 @@ class SoftwareRenderer(sdl2.ext.SoftwareSpriteRenderSystem):
     def render(self, components):
         sdl2.ext.fill(self.surface, sdl2.ext.Color(0, 0, 0))
         super(SoftwareRenderer, self).render(components)
-
-class Player(sdl2.ext.Entity):
-    def __init__(self, world, sprite, posx=0, posy=0):
-        self.sprite = sprite
-        self.sprite.position = posx, posy
 
 def runLoop():
     loopTimer = ct.CTimer()
@@ -28,6 +29,7 @@ def runLoop():
     for event in events:
         if event.type == sdl2.SDL_QUIT:
             return False
+            break
         # else:
             # print "sdl event type: %s" % event.type
    
@@ -46,8 +48,8 @@ def main():
     RESOURCES = sdl2.ext.Resources(__file__, "resources")
     sdl2.ext.init()
 
-    # create window based on image size(tuple)
-    window = sdl2.ext.Window("Space Invaders", size=(500, 800))
+    # create window
+    window = sdl2.ext.Window("Space Invaders", size=(width, height))
     window.show()
 
     # create a sprite renderer
@@ -60,15 +62,15 @@ def main():
     # load a sprite directly from image, note: can also manually
     # create one, but this factory will do heavy lifting for now
     factory = sdl2.ext.SpriteFactory(sdl2.ext.SOFTWARE)
-    # debug check of supported image formats
-    # print formats
-    sprite = factory.from_color(sdl2.ext.Color(255, 255, 255), size=(50, 50))
-    player1 = Player(world, sprite, 0, 0)
+    # create player sprite and player object
+    sprite = factory.from_color(white, size=(playerwidth, playerheight))
+    player1 = pl.Player(world, sprite, (width/2) - (playerheight + playerheight/2), (height - playerheight))
 
 
     running = True
     while running:
         running = runLoop()
+        world.process()
 
     # cleanup
     sdl2.ext.quit()
