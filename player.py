@@ -2,6 +2,7 @@ import sdl2
 import sdl2.ext
 import movement as mov
 
+
 class Player(sdl2.ext.Entity):
     def __init__(self, world, sprite, posx=0, posy=0):
         self.sprite = sprite

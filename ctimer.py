@@ -9,9 +9,9 @@ class CTimer:
     def display(self):
         delta = time.clock() - self.start
         os = "{:.5f}".format(delta) 
-        print "Partial:", os
+        # print "Partial:", os
 
     def __del__(self):
         delta = time.clock() - self.start
         os = "{:.5f}".format(delta) 
-        print "Elapsed:", os
+        # print "Elapsed:", os
