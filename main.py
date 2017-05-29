@@ -5,6 +5,7 @@ import movement as mov
 from optparse import OptionParser
 import time
 
+#-------------------------------------------------------------------------------
 class SoftwareRenderer(sdl2.ext.SoftwareSpriteRenderSystem):
     def __init__(self, window):
         super(SoftwareRenderer, self).__init__(window)
@@ -12,7 +13,7 @@ class SoftwareRenderer(sdl2.ext.SoftwareSpriteRenderSystem):
     def render(self, components):
         sdl2.ext.fill(self.surface, sdl2.ext.Color(0, 0, 0))
         super(SoftwareRenderer, self).render(components)
-
+#-------------------------------------------------------------------------------
 def update(player, time):
     # our main game loop 
 
@@ -33,19 +34,26 @@ def update(player, time):
     # send local state to remotes
 
     return True
-
+#-------------------------------------------------------------------------------
 def render(world):
     world.process()
-
+#-------------------------------------------------------------------------------
 def main():
     print "--begin game--"
 
+    ###########################################################################
     # set up command line arguments using optparse library
+    ###########################################################################
     usage = "usage: %prog [options] arg1 arg2"
     parser = OptionParser(usage, version="%prog 0.1")
-    parser.add_option("-x", "--width", type="int", dest="width", default=600, help="set window width [600]")
-    parser.add_option("-y", "--height", type="int", dest="height", default=800, help="set window height [800]")
-    parser.add_option("-d", "--debug", action="store_true", dest="debug", default=False, help="enable debug print output")
+    parser.add_option("-x", "--width", type="int", dest="width", default=600,
+                      help="set window width [600]")
+    parser.add_option("-y", "--height", type="int", dest="height", default=800,
+                      help="set window height [800]")
+    parser.add_option("-l", "--limitframe", type="float", dest="limitFrameRate",
+                      help="limit framerate to specified value [NO DEFAULT]")
+    parser.add_option("-d", "--debug", action="store_true", dest="debug",
+                      default=False, help="enable debug print output")
     (options, args) = parser.parse_args()
 
     # extract window size variables
@@ -53,6 +61,18 @@ def main():
     height = options.height
     print "--window size(%d, %d)--" % (width, height)
 
+    # extract limited framerate settings
+    limitFrame = False
+    frameRateLimit = 0
+    if (options.limitFrameRate):
+        limitFrame = True
+        frameRateLimit = options.limitFrameRate
+        print "--frame rate limit(%d)--" % (frameRateLimit)
+    ###########################################################################
+
+    ###########################################################################
+    # SDL setup
+    ###########################################################################
     RESOURCES = sdl2.ext.Resources(__file__, "resources")
     sdl2.ext.init()
 
@@ -60,33 +80,44 @@ def main():
     window = sdl2.ext.Window("Space Invaders", size=(width, height))
     window.show()
 
+    # create world
+    world = sdl2.ext.World()
+
     # create a sprite renderer
     spriterenderer = SoftwareRenderer(window)
+    world.add_system(spriterenderer)
 
     # create a movement system
     movementsystem = mov.MovementSystem(0, 0, width, height)
-
-    # create world
-    world = sdl2.ext.World()
-    world.add_system(spriterenderer)
     world.add_system(movementsystem)
+    ###########################################################################
 
+    ###########################################################################
+    # Our game object setup
+    ###########################################################################
     # create player object
     player1 = draw.Player(world, width, height, 0.5, 1.0, .11, .036)
-
+    ###########################################################################
 
     running = True
-    delta = 0.0
+    loopTimer = ct.CTimer(options.debug);
+    minFrameSecs = 1.0 / frameRateLimit
     while running:
-        startTime = time.clock()
-        running = update(player1, delta)
+        lastDelta = loopTimer.getDelta()
+
+        # Sleep if frame rate is higher than desired
+        if (limitFrame and (lastDelta < minFrameSecs)):
+            time.sleep(minFrameSecs - lastDelta)
+
+        running = update(player1, lastDelta)
         render(world)
-        delta = time.clock() - startTime
+        loopTimer.update()
 
     # cleanup
     sdl2.ext.quit()
 
     print "--end game--"
-
+#-------------------------------------------------------------------------------
 if __name__ == "__main__":
     main()
+#-------------------------------------------------------------------------------
