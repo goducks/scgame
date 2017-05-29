@@ -1,8 +1,9 @@
 import sdl2.ext
-import time
+import ctimer as ct
 import drawable as draw
 import movement as mov
-import sys
+from optparse import OptionParser
+import time
 
 class SoftwareRenderer(sdl2.ext.SoftwareSpriteRenderSystem):
     def __init__(self, window):
@@ -31,8 +32,6 @@ def update(player, time):
 
     # send local state to remotes
 
-    # render or whatever
-
     return True
 
 def render(world):
@@ -41,12 +40,21 @@ def render(world):
 def main():
     print "--begin game--"
 
+    # set up command line arguments using optparse library
+    usage = "usage: %prog [options] arg1 arg2"
+    parser = OptionParser(usage, version="%prog 0.1")
+    parser.add_option("-x", "--width", type="int", dest="width", default=600, help="set window width [600]")
+    parser.add_option("-y", "--height", type="int", dest="height", default=800, help="set window height [800]")
+    parser.add_option("-d", "--debug", action="store_true", dest="debug", default=False, help="enable debug print output")
+    (options, args) = parser.parse_args()
+
+    # extract window size variables
+    width = options.width
+    height = options.height
+    print "--window size(%d, %d)--" % (width, height)
+
     RESOURCES = sdl2.ext.Resources(__file__, "resources")
     sdl2.ext.init()
-
-    # temp variables until command line works
-    width = int(sys.argv[1])
-    height = int(sys.argv[2])
 
     # create window
     window = sdl2.ext.Window("Space Invaders", size=(width, height))
@@ -68,7 +76,6 @@ def main():
 
 
     running = True
-    startTime = 0.0
     delta = 0.0
     while running:
         startTime = time.clock()
@@ -82,5 +89,4 @@ def main():
     print "--end game--"
 
 if __name__ == "__main__":
-    print(sys.argv)
     main()
