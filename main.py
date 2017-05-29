@@ -1,13 +1,8 @@
 import sdl2.ext
-import ctimer as ct
-import player as pl
+import time
+import drawable as draw
 import movement as mov
-
-width = 600
-height = 800
-playerwidth = width/9
-playerheight = height/28
-white = sdl2.ext.Color(255, 255, 255)
+import sys
 
 class SoftwareRenderer(sdl2.ext.SoftwareSpriteRenderSystem):
     def __init__(self, window):
@@ -17,9 +12,7 @@ class SoftwareRenderer(sdl2.ext.SoftwareSpriteRenderSystem):
         sdl2.ext.fill(self.surface, sdl2.ext.Color(0, 0, 0))
         super(SoftwareRenderer, self).render(components)
 
-def runLoop(player):
-    loopTimer = ct.CTimer()
-
+def update(player, time):
     # our main game loop 
 
     # read remote inputs 
@@ -42,11 +35,18 @@ def runLoop(player):
 
     return True
 
+def render(world):
+    world.process()
+
 def main():
     print "--begin game--"
 
     RESOURCES = sdl2.ext.Resources(__file__, "resources")
     sdl2.ext.init()
+
+    # temp variables until command line works
+    width = int(sys.argv[1])
+    height = int(sys.argv[2])
 
     # create window
     window = sdl2.ext.Window("Space Invaders", size=(width, height))
@@ -63,19 +63,18 @@ def main():
     world.add_system(spriterenderer)
     world.add_system(movementsystem)
 
-    # load a sprite directly from image, note: can also manually
-    # create one, but this factory will do heavy lifting for now
-    factory = sdl2.ext.SpriteFactory(sdl2.ext.SOFTWARE)
-    # create player sprite and player object
-    sprite = factory.from_color(white, size=(playerwidth, playerheight))
-    player1 = pl.Player(world, sprite, (width/2) - (playerheight + playerheight/2), (height - playerheight - 10))
+    # create player object
+    player1 = draw.Player(world, width, height, 0.5, 1.0, .11, .036)
 
 
     running = True
+    startTime = 0.0
+    delta = 0.0
     while running:
-        running = runLoop(player1)
-        sdl2.SDL_Delay(10)
-        world.process()
+        startTime = time.clock()
+        running = update(player1, delta)
+        render(world)
+        delta = time.clock() - startTime
 
     # cleanup
     sdl2.ext.quit()
@@ -83,4 +82,5 @@ def main():
     print "--end game--"
 
 if __name__ == "__main__":
+    print(sys.argv)
     main()
