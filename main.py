@@ -1,6 +1,5 @@
 import sdl2.ext
 import drawable as draw
-import movement as mov
 from optparse import OptionParser
 import timeit as ti
 import time
@@ -13,11 +12,11 @@ class SoftwareRenderer(sdl2.ext.SoftwareSpriteRenderSystem):
     def render(self, components):
         sdl2.ext.fill(self.surface, sdl2.ext.Color(0, 0, 0))
         super(SoftwareRenderer, self).render(components)
-#-------------------------------------------------------------------------------
-def update(player, time):
-    # our main game loop 
+# -------------------------------------------------------------------------------
+def update(player, bullets, time):
+    # our main game loop
 
-    # read remote inputs 
+    # read remote inputs
     # ...
 
     # read local inputs & events
@@ -27,17 +26,22 @@ def update(player, time):
             return False
             break
         player.getInput(event)
-   
+    player.update(time)
+    for bullet in bullets:
+        bullet.update(time)
+
+
     # update game state
     # ...
 
     # send local state to remotes
 
     return True
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 def render(world):
     world.process()
-#-------------------------------------------------------------------------------
+
+# -------------------------------------------------------------------------------
 def main():
     print "--begin game--"
 
@@ -87,9 +91,6 @@ def main():
     spriterenderer = SoftwareRenderer(window)
     world.add_system(spriterenderer)
 
-    # create a movement system
-    movementsystem = mov.MovementSystem(0, 0, width, height)
-    world.add_system(movementsystem)
     ###########################################################################
 
     ###########################################################################
@@ -97,6 +98,7 @@ def main():
     ###########################################################################
     # create player object
     player1 = draw.Player(world, width, height, 0.5, 1.0, .11, .036)
+    bullets = player1.bullets
     ###########################################################################
 
     running = True
@@ -107,7 +109,7 @@ def main():
 
         #######################################################################
         # add all per-frame work here
-        running = update(player1, lastDelta)
+        running = update(player1, bullets, lastDelta)
         render(world)
         #######################################################################
 
@@ -118,14 +120,14 @@ def main():
             time.sleep(minFrameSecs - lastDelta)
             stop = ti.default_timer()
             lastDelta = stop - start
-        if (debug):
+        if (options.debug):
             print "Update: ", lastDelta
 
     # cleanup
     sdl2.ext.quit()
 
     print "--end game--"
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 if __name__ == "__main__":
     main()
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
