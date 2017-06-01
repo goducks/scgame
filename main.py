@@ -1,8 +1,8 @@
 import sdl2.ext
-import ctimer as ct
 import drawable as draw
 import movement as mov
 from optparse import OptionParser
+import timeit as ti
 import time
 
 #-------------------------------------------------------------------------------
@@ -63,7 +63,7 @@ def main():
 
     # extract limited framerate settings
     limitFrame = False
-    frameRateLimit = 0
+    frameRateLimit = 1.0
     if (options.limitFrameRate):
         limitFrame = True
         frameRateLimit = options.limitFrameRate
@@ -100,18 +100,26 @@ def main():
     ###########################################################################
 
     running = True
-    loopTimer = ct.CTimer(options.debug);
     minFrameSecs = 1.0 / frameRateLimit
+    lastDelta = 0.0
     while running:
-        lastDelta = loopTimer.getDelta()
+        start = ti.default_timer()
 
+        #######################################################################
+        # add all per-frame work here
+        running = update(player1, lastDelta)
+        render(world)
+        #######################################################################
+
+        stop = ti.default_timer()
+        lastDelta = stop - start
         # Sleep if frame rate is higher than desired
         if (limitFrame and (lastDelta < minFrameSecs)):
             time.sleep(minFrameSecs - lastDelta)
-
-        running = update(player1, lastDelta)
-        render(world)
-        loopTimer.update()
+            stop = ti.default_timer()
+            lastDelta = stop - start
+        if (debug):
+            print "Update: ", lastDelta
 
     # cleanup
     sdl2.ext.quit()
