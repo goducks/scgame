@@ -1,6 +1,7 @@
 import sdl2.ext
 import drawable as draw
 from optparse import OptionParser
+import collision
 import timeit as ti
 import time
 
@@ -13,7 +14,7 @@ class SoftwareRenderer(sdl2.ext.SoftwareSpriteRenderSystem):
         sdl2.ext.fill(self.surface, sdl2.ext.Color(0, 0, 0))
         super(SoftwareRenderer, self).render(components)
 # -------------------------------------------------------------------------------
-def update(player, bullets, time):
+def update(player, bullets, enemies, time):
     # our main game loop
 
     # read remote inputs
@@ -29,7 +30,14 @@ def update(player, bullets, time):
     player.update(time)
     for bullet in bullets:
         bullet.update(time)
-
+        for enemy in enemies:
+            hit = collision.checkCollision(bullet, enemy)
+            if hit:
+                enemy.hit()
+                enemies.remove(enemy)
+                bullet.hit()
+                bullets.remove(bullet)
+                break
 
     # update game state
     # ...
@@ -99,6 +107,18 @@ def main():
     # create player object
     player1 = draw.Player(world, width, height, 0.5, 1.0, .11, .036)
     bullets = player1.bullets
+
+    #create enemies
+    enemies = list()
+    y = .05
+    while y < .4:
+        x = .1
+        while x < .85:
+            enemy = draw.Enemy(world, width, height, x, y, 0.075, 0.03)
+            enemies.append(enemy)
+            x += .1
+        y += .05
+
     ###########################################################################
 
     running = True
@@ -109,7 +129,7 @@ def main():
 
         #######################################################################
         # add all per-frame work here
-        running = update(player1, bullets, lastDelta)
+        running = update(player1, bullets, enemies, lastDelta)
         render(world)
         #######################################################################
 

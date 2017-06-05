@@ -1,6 +1,7 @@
 import sdl2
 import sdl2.ext
 import localmath as lm
+import collision
 from abc import ABCMeta, abstractmethod
 
 
@@ -16,6 +17,13 @@ class Drawable(GameObject):
     def __init__(self, world, width, height):
         factory = sdl2.ext.SpriteFactory(sdl2.ext.SOFTWARE)
         sprite = factory.from_color(sdl2.ext.Color(255, 255, 255), size=(width, height))
+        self.sprite = sprite
+        self.sprite.height = height
+        self.sprite.width = width
+
+    def remove(self):
+        factory = sdl2.ext.SpriteFactory(sdl2.ext.SOFTWARE)
+        sprite = factory.from_color(sdl2.ext.Color(0, 0, 0), size=(0, 0))
         self.sprite = sprite
 
     def update(self, time):
@@ -41,7 +49,6 @@ class Player(Drawable):
         Player.bullets = list()
 
     def fire(self):
-        print len(self.bullets)
         for bullet in self.bullets:
             if bullet.sprite.y < -16:
                 self.bullets.remove(bullet)
@@ -85,3 +92,16 @@ class Bullet(Drawable):
 
     def update(self, time):
         self.sprite.y += lm.NDCToSC_y(self.vy * time, self.maxheight)
+
+    def hit(self):
+        super(Bullet, self).remove()
+
+class Enemy(Drawable):
+    def __init__(self, world, wwidth, wheight, posx=0.0, posy=0.0, width=0.0, height=0.0):
+        enemywidth, enemyheight = lm.NDCToSC(width, height, wwidth, wheight)
+        enemyposx, enemyposy = lm.NDCToSC(posx, posy, wwidth, wheight)
+        super(Enemy, self).__init__(world, int(enemywidth), int(enemyheight))
+        self.sprite.position = int(enemyposx), int(enemyposy)
+
+    def hit(self):
+        super(Enemy, self).remove()
