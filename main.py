@@ -28,6 +28,8 @@ def update(player, bullets, enemies, time):
             break
         player.getInput(event)
     player.update(time)
+    for enemy in enemies:
+        enemy.update(time)
     for bullet in bullets:
         bullet.update(time)
         for enemy in enemies:
@@ -105,19 +107,21 @@ def main():
     # Our game object setup
     ###########################################################################
     # create player object
-    player1 = draw.Player(world, width, height, 0.5, 1.0, .11, .036)
+    player1 = draw.Player(world, width, height, 0.5, 1.0, 66, 28.8)
     bullets = player1.bullets
 
     #create enemies
     enemies = list()
-    y = .05
+    yoffset = .05
+    xoffset = .1
+    y = yoffset
     while y < .4:
-        x = .1
+        x = xoffset
         while x < .85:
             enemy = draw.Enemy(world, width, height, x, y, 0.075, 0.03)
             enemies.append(enemy)
-            x += .1
-        y += .05
+            x += xoffset
+        y += yoffset
 
     ###########################################################################
 

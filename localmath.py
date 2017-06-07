@@ -9,3 +9,6 @@ def NDCToSC_x(x, screenwidth):
 def NDCToSC_y(y, screenheight):
     assert abs(y) >= 0.0 and abs(y) <= 1.0, "Invalid NDCs"
     return int(y * screenheight)
+
+def SC(x, y):
+    return x, y
