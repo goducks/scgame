@@ -1,7 +1,7 @@
 import sdl2
 import sdl2.ext
 import localmath as lm
-import collision
+import time as t
 from abc import ABCMeta, abstractmethod
 
 
@@ -21,11 +21,6 @@ class Drawable(GameObject):
         self.sprite.height = height
         self.sprite.width = width
 
-    def remove(self):
-        factory = sdl2.ext.SpriteFactory(sdl2.ext.SOFTWARE)
-        sprite = factory.from_color(sdl2.ext.Color(0, 0, 0), size=(0, 0))
-        self.sprite = sprite
-
     def update(self, time):
         pass
 
@@ -33,7 +28,7 @@ class Drawable(GameObject):
 class Player(Drawable):
 
     def __init__(self, world, wwidth, wheight, posx=0.0, posy=0.0, width=0.0, height=0.0):
-        playerwidth, playerheight = lm.NDCToSC(width, height, wwidth, wheight)
+        playerwidth, playerheight = lm.SC(width, height)
         playerposx, playerposy = lm.NDCToSC(posx, posy, wwidth, wheight)
         playerposx -= playerheight + playerheight / 2
         playerposy -= playerheight + 10
@@ -52,6 +47,7 @@ class Player(Drawable):
         for bullet in self.bullets:
             if bullet.sprite.y < -16:
                 self.bullets.remove(bullet)
+                bullet.delete()
         if len(self.bullets) < 5:
             self.bullets.append(Bullet(self.world, int(self.sprite.x + self.width / 2),
                                        self.sprite.y, self.maxwidth, self.maxheight))
@@ -84,7 +80,7 @@ class Player(Drawable):
 
 class Bullet(Drawable):
     def __init__(self, world, posx, posy, wwidth, wheight):
-        bulletwidth, bulletheight = lm.NDCToSC(.015, .020, wwidth, wheight)
+        bulletwidth, bulletheight = lm.NDCToSC(.005, .025, wwidth, wheight)
         super(Bullet, self).__init__(world, int(bulletwidth), int(bulletheight))
         self.sprite.position = posx, posy
         Bullet.maxheight = wheight
@@ -94,7 +90,7 @@ class Bullet(Drawable):
         self.sprite.y += lm.NDCToSC_y(self.vy * time, self.maxheight)
 
     def hit(self):
-        super(Bullet, self).remove()
+        self.delete()
 
 class Enemy(Drawable):
     def __init__(self, world, wwidth, wheight, posx=0.0, posy=0.0, width=0.0, height=0.0):
@@ -102,6 +98,20 @@ class Enemy(Drawable):
         enemyposx, enemyposy = lm.NDCToSC(posx, posy, wwidth, wheight)
         super(Enemy, self).__init__(world, int(enemywidth), int(enemyheight))
         self.sprite.position = int(enemyposx), int(enemyposy)
+        Enemy.maxwidth = wwidth - lm.NDCToSC_x(.1, wwidth)
+        Enemy.minwidth = lm.NDCToSC_x(.1, wwidth)
+        Enemy.maxheight = wheight
+        Enemy.vx = .25
+        Enemy.vy = 0
+
+    def update(self, time):
+        Enemy.vy = 0
+        if self.sprite.x > self.maxwidth or self.sprite.x < self.minwidth:
+            Enemy.vx = -Enemy.vx
+            Enemy.vy = .25
+        self.sprite.y += lm.NDCToSC_y(Enemy.vy * time, self.maxheight)
+        self.sprite.x += lm.NDCToSC_x(Enemy.vx * time, self.maxwidth)
+
 
     def hit(self):
-        super(Enemy, self).remove()
+        self.delete()
