@@ -1,7 +1,7 @@
 import sdl2
 import sdl2.ext
 import localmath as lm
-import time as t
+import random
 from abc import ABCMeta, abstractmethod
 
 
@@ -42,13 +42,14 @@ class Player(Drawable):
         Player.maxwidth = wwidth
         Player.maxheight = wheight
         Player.bullets = list()
+        Player.lives = 3
 
     def fire(self):
         for bullet in self.bullets:
             if bullet.sprite.y < -16:
                 self.bullets.remove(bullet)
                 bullet.delete()
-        if len(self.bullets) < 5:
+        if len(self.bullets) < 2:
             self.bullets.append(Bullet(self.world, int(self.sprite.x + self.width / 2),
                                        self.sprite.y, self.maxwidth, self.maxheight))
 
@@ -65,6 +66,9 @@ class Player(Drawable):
                 if event.key.keysym.sym in (sdl2.SDLK_LEFT, sdl2.SDLK_RIGHT):
                     Player.vx = 0
 
+    def lostlife(self):
+        Player.lives -= 1
+
     def update(self, time):
         # width and height of sprite so it can stay in bounds
         swidth, sheight = self.sprite.size
@@ -80,7 +84,7 @@ class Player(Drawable):
 
 class Bullet(Drawable):
     def __init__(self, world, posx, posy, wwidth, wheight):
-        bulletwidth, bulletheight = lm.NDCToSC(.005, .025, wwidth, wheight)
+        bulletwidth, bulletheight = lm.NDCToSC(.01, .025, wwidth, wheight)
         super(Bullet, self).__init__(world, int(bulletwidth), int(bulletheight))
         self.sprite.position = posx, posy
         Bullet.maxheight = wheight
@@ -89,7 +93,7 @@ class Bullet(Drawable):
     def update(self, time):
         self.sprite.y += lm.NDCToSC_y(self.vy * time, self.maxheight)
 
-    def hit(self):
+    def remove(self):
         self.delete()
 
 class Enemy(Drawable):
@@ -98,20 +102,77 @@ class Enemy(Drawable):
         enemyposx, enemyposy = lm.NDCToSC(posx, posy, wwidth, wheight)
         super(Enemy, self).__init__(world, int(enemywidth), int(enemyheight))
         self.sprite.position = int(enemyposx), int(enemyposy)
-        Enemy.maxwidth = wwidth - lm.NDCToSC_x(.1, wwidth)
-        Enemy.minwidth = lm.NDCToSC_x(.1, wwidth)
+        Enemy.width = enemywidth
+        Enemy.height = enemyheight
+        Enemy.maxwidth = wwidth - lm.NDCToSC_x(.05, wwidth)
+        Enemy.minwidth = lm.NDCToSC_x(.05, wwidth)
         Enemy.maxheight = wheight
         Enemy.vx = .25
         Enemy.vy = 0
+        Enemy.move = True
 
     def update(self, time):
-        Enemy.vy = 0
-        if self.sprite.x > self.maxwidth or self.sprite.x < self.minwidth:
-            Enemy.vx = -Enemy.vx
-            Enemy.vy = .25
         self.sprite.y += lm.NDCToSC_y(Enemy.vy * time, self.maxheight)
-        self.sprite.x += lm.NDCToSC_x(Enemy.vx * time, self.maxwidth)
+        if self.move:
+            self.sprite.x += lm.NDCToSC_x(Enemy.vx * time, self.maxwidth)
+
+    def shoot(self):
+        for bullet in EnemyBlock.bullets:
+            if bullet.sprite.y > self.maxheight:
+                EnemyBlock.bullets.remove(bullet)
+                bullet.delete()
+        if len(EnemyBlock.bullets) < 1:
+            EnemyBlock.bullets.append(EnemyBullet(self.world, int(self.sprite.x + self.width / 2),
+                                            self.sprite.y, self.maxwidth, self.maxheight))
+
+    def remove(self):
+        self.delete()
+
+class EnemyBlock(Drawable):
+    def __init__(self, world, width, height, posx, posy):
+        EnemyBlock.top = posy
+        EnemyBlock.left = posx
+        EnemyBlock.right = width
+        EnemyBlock.bottom = height
+        EnemyBlock.counter = 0
+        EnemyBlock.timer = 0
+        EnemyBlock.bullets = list()
+        EnemyBlock.shoottime = random.randint(30, 40)
+
+    def update(self, time, enemies):
+        Enemy.vy = 0
+        temp = self.left
+        EnemyBlock.left = enemies[0].sprite.x
+        distancemoved = self.left - temp
+        EnemyBlock.right += distancemoved
+        if EnemyBlock.right > Enemy.maxwidth or EnemyBlock.left < Enemy.minwidth:
+            Enemy.vx = -Enemy.vx
+            Enemy.vy = .5
+            EnemyBlock.counter = 15
+        if EnemyBlock.timer == self.shoottime:
+            shooter = random.randint(0, len(enemies) - 1)
+            enemies[shooter].shoot()
+            EnemyBlock.timer = 0
+        if EnemyBlock.counter == 15:
+            Enemy.move = True
+            EnemyBlock.counter = 0
+        else:
+            Enemy.move = False
+            EnemyBlock.counter += 1
+        EnemyBlock.timer += 1
 
 
-    def hit(self):
+class EnemyBullet(Drawable):
+    def __init__(self, world, posx, posy, wwidth, wheight):
+        bulletwidth, bulletheight = lm.NDCToSC(.01, .025, wwidth, wheight)
+        super(EnemyBullet, self).__init__(world, int(bulletwidth), int(bulletheight))
+        self.sprite.position = posx, posy
+        EnemyBullet.height = bulletheight
+        EnemyBullet.maxheight = wheight
+        EnemyBullet.vy = .5
+
+    def update(self, time):
+        self.sprite.y += lm.NDCToSC_y(self.vy * time, self.maxheight)
+
+    def remove(self):
         self.delete()
