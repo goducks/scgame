@@ -1,19 +1,16 @@
 import drawable
+
+global llAx, llAy
+llAx, llAy = 0, 0
 def checkCollision(objA, objB):
-    minA = objA.sprite.y
-    minB = objB.sprite.y
-    maxA = objA.sprite.y
-    maxB = objB.sprite.y + objB.sprite.height
-    leftA = objA.sprite.x
-    leftB = objB.sprite.x
-    rightA = objA.sprite.x + objA.sprite.width
-    rightB = objB.sprite.x + objB.sprite.width
+    global llAx, llAy
+    oldllx, oldlly = llAx, llAy
+    llAx, llAy = objA.sprite.x, (objA.sprite.y + objA.sprite.height)
+    llBx, llBy = objB.sprite.x, (objB.sprite.y + objB.sprite.height)
+    urAx, urAy = (objA.sprite.x + objA.sprite.width), objA.sprite.y
+    urBx, urBy = (objB.sprite.x + objB.sprite.width), objB.sprite.y
     if isinstance(objA, drawable.Bullet):
-        maxA = objA.sprite.y + (objA.sprite.height * 2)
-        rightA = objA.sprite.x + (objA.sprite.width * 2)
-        leftA = objA.sprite.x - objA.sprite.width
-    elif isinstance(objA, drawable.EnemyBullet):
-        minA = objA.sprite.y - (objA.sprite.height * 2)
-    if (minA <= maxB) and (maxA >= minB) and (rightA >= leftB) and (leftA <= rightB):
+        llAx = objA.sprite.x - objA.sprite.width
+    if (urAy <= llBy) and (llAy >= urBy) and (urAx >= llBx) and (llAx <= urBx):
         return True
     return False

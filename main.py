@@ -4,9 +4,11 @@ from optparse import OptionParser
 import collision
 import timeit as ti
 import time
+import ui
 
 keeprunning = True
 window = None
+world = None
 
 # -------------------------------------------------------------------------------
 class SoftwareRenderer(sdl2.ext.SoftwareSpriteRenderSystem):
@@ -17,15 +19,24 @@ class SoftwareRenderer(sdl2.ext.SoftwareSpriteRenderSystem):
         sdl2.ext.fill(self.surface, sdl2.ext.Color(0, 0, 0))
         super(SoftwareRenderer, self).render(components)
 
-def clear(world):
+class TextureRenderer(sdl2.ext.TextureSpriteRenderSystem):
+    def __init__(self, renderer):
+        super(TextureRenderer, self).__init__(renderer)
+        self.renderer = renderer
+
+def clear(world, enemies):
     print "clearing"
-    renderer = sdl2.SDL_CreateRenderer(window.window, -1, 0)
-    sdl2.SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255)
-    sdl2.SDL_RenderFillRect(renderer, None)
-    sdl2.SDL_RenderPresent(renderer)
+    for enemy in enemies:
+        enemy.remove()
+    del enemies[:]
+    render(world)
+    # renderer = sdl2.SDL_CreateRenderer(window.window, -1, 0)
+    # sdl2.SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255)
+    # sdl2.SDL_RenderFillRect(renderer, None)
+    # sdl2.SDL_RenderPresent(renderer)
 
 def gameover():
-    # sdl2.SDL_Delay(5000)
+    sdl2.SDL_Delay(1000)
     # time.sleep(2)
     sdl2.ext.quit()
     quit()
@@ -136,9 +147,11 @@ def main():
     world = sdl2.ext.World()
 
     # create a sprite renderer
-    global spriterenderer
     spriterenderer = SoftwareRenderer(window)
     world.add_system(spriterenderer)
+
+    renderer = sdl2.SDL_CreateRenderer(window.window, -1, 0)
+    ui.textMaker(renderer, "kill me")
 
     ###########################################################################
 
@@ -181,7 +194,7 @@ def main():
         #######################################################################
         # add all per-frame work here
         if not keeprunning:
-            clear(world)
+            clear(world, width, height, enemies)
             gameover()
         else:
             running = update(player1, bullets, enemyblock, enemies, lastDelta)
