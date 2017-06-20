@@ -7,9 +7,13 @@ import time
 import ui
 
 keeprunning = True
-window = None
-world = None
+renderer = None
 
+# -------------------------------------------------------------------------------
+# NOTE FOR SARAH -- I think we can delete both these classes -- they aren't used
+# any longer with the way the renderer is created below. this may mean we can
+# also change the clear operation to not just delete everything and truly clear
+# the window
 # -------------------------------------------------------------------------------
 class SoftwareRenderer(sdl2.ext.SoftwareSpriteRenderSystem):
     def __init__(self, window):
@@ -96,8 +100,8 @@ def update(player, bullets, enemyblock, enemies, time):
 
 # -------------------------------------------------------------------------------
 def render(world):
+    renderer.clear()
     world.process()
-
 
 # -------------------------------------------------------------------------------
 def main():
@@ -138,20 +142,23 @@ def main():
     RESOURCES = sdl2.ext.Resources(__file__, "resources")
     sdl2.ext.init()
 
-    # create window
-    global window
-    window = sdl2.ext.Window("Space Invaders", size=(width, height))
-    window.show()
-
     # create world
     world = sdl2.ext.World()
 
-    # create a sprite renderer
-    spriterenderer = SoftwareRenderer(window)
+    # create window
+    window = sdl2.ext.Window("Space Invaders", size=(width, height))
+    window.show()
+
+    # create a sprite renderer starting with a base sdl2ext renderer
+    global renderer
+    renderer = sdl2.ext.Renderer(window)
+    factory = sdl2.ext.SpriteFactory(sdl2.ext.TEXTURE, renderer=renderer)
+    spriterenderer = factory.create_sprite_render_system()
     world.add_system(spriterenderer)
 
-    renderer = sdl2.SDL_CreateRenderer(window.window, -1, 0)
-    ui.textMaker(renderer, "kill me")
+    # create ui system
+    # SARAH -- this is commented out ONLY to get the sprites rendering again
+    # ui.textMaker(renderer, "kill me")
 
     ###########################################################################
 
