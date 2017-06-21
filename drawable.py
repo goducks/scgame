@@ -2,6 +2,7 @@ import sdl2
 import sdl2.ext
 import localmath as lm
 import random
+import os
 from abc import ABCMeta, abstractmethod
 
 
@@ -14,9 +15,13 @@ class GameObject(sdl2.ext.Entity):
 
 
 class Drawable(GameObject):
-    def __init__(self, world, width, height):
+    def __init__(self, world, renderer, width, height):
         factory = sdl2.ext.SpriteFactory(sdl2.ext.SOFTWARE)
-        sprite = factory.from_color(sdl2.ext.Color(255, 255, 255), size=(width, height))
+        # sprite = factory.from_color(sdl2.ext.Color(255, 255, 255), size=(width, height))
+        # rect = sdl2.SDL_Rect(0, 0, width, height)
+        # sdl2.SDL_RenderDrawRect(renderer.sdlrenderer, rect)
+        sdl2.SDL_SetRenderDrawColor(renderer.renderer, 255, 255, 255, 255)
+        sprite = factory.create_texture_sprite(renderer, size=(width, height))
         self.sprite = sprite
         self.sprite.height = height
         self.sprite.width = width
@@ -27,16 +32,15 @@ class Drawable(GameObject):
 
 class Player(Drawable):
 
-    def __init__(self, world, wwidth, wheight, posx=0.0, posy=0.0, width=0.0, height=0.0):
+    def __init__(self, world, renderer, wwidth, wheight, posx=0.0, posy=0.0, width=0.0, height=0.0):
         playerwidth, playerheight = lm.SC(width, height)
         playerposx, playerposy = lm.NDCToSC(posx, posy, wwidth, wheight)
         playerposx -= playerheight + playerheight / 2
         playerposy -= playerheight + 10
-        super(Player, self).__init__(world, int(playerwidth), int(playerheight))
+        super(Player, self).__init__(world, renderer, int(playerwidth), int(playerheight))
         self.sprite.position = int(playerposx), int(playerposy)
-        # set velocity to 0
         Player.vx = 0
-        # save things for use in later functions
+        Player.renderer = renderer
         Player.width = playerwidth
         Player.height = playerheight
         Player.maxwidth = wwidth
@@ -50,7 +54,7 @@ class Player(Drawable):
                 self.bullets.remove(bullet)
                 bullet.delete()
         if len(self.bullets) < 2:
-            self.bullets.append(Bullet(self.world, int(self.sprite.x + self.width / 2),
+            self.bullets.append(Bullet(self.world, self.renderer, int(self.sprite.x + self.width / 2),
                                        self.sprite.y, self.maxwidth, self.maxheight))
 
     def getInput(self, event):
@@ -83,9 +87,9 @@ class Player(Drawable):
             self.sprite.x = self.maxwidth - swidth
 
 class Bullet(Drawable):
-    def __init__(self, world, posx, posy, wwidth, wheight):
+    def __init__(self, world, renderer, posx, posy, wwidth, wheight):
         bulletwidth, bulletheight = lm.NDCToSC(.01, .025, wwidth, wheight)
-        super(Bullet, self).__init__(world, int(bulletwidth), int(bulletheight))
+        super(Bullet, self).__init__(world, renderer, int(bulletwidth), int(bulletheight))
         self.sprite.position = posx, posy
         Bullet.maxheight = wheight
         Bullet.vy = -.5
@@ -97,11 +101,12 @@ class Bullet(Drawable):
         self.delete()
 
 class Enemy(Drawable):
-    def __init__(self, world, wwidth, wheight, posx=0.0, posy=0.0, width=0.0, height=0.0):
+    def __init__(self, world, renderer, wwidth, wheight, posx=0.0, posy=0.0, width=0.0, height=0.0):
         enemywidth, enemyheight = lm.NDCToSC(width, height, wwidth, wheight)
         enemyposx, enemyposy = lm.NDCToSC(posx, posy, wwidth, wheight)
-        super(Enemy, self).__init__(world, int(enemywidth), int(enemyheight))
+        super(Enemy, self).__init__(world, renderer, int(enemywidth), int(enemyheight))
         self.sprite.position = int(enemyposx), int(enemyposy)
+        Enemy.renderer = renderer
         Enemy.width = enemywidth
         Enemy.height = enemyheight
         Enemy.maxwidth = wwidth - lm.NDCToSC_x(.05, wwidth)
@@ -122,7 +127,7 @@ class Enemy(Drawable):
                 EnemyBlock.bullets.remove(bullet)
                 bullet.delete()
         if len(EnemyBlock.bullets) < 1:
-            EnemyBlock.bullets.append(EnemyBullet(self.world, int(self.sprite.x + self.width / 2),
+            EnemyBlock.bullets.append(EnemyBullet(self.world, self.renderer, int(self.sprite.x + self.width / 2),
                                             self.sprite.y, self.maxwidth, self.maxheight))
 
     def remove(self):
@@ -163,9 +168,9 @@ class EnemyBlock(Drawable):
 
 
 class EnemyBullet(Drawable):
-    def __init__(self, world, posx, posy, wwidth, wheight):
+    def __init__(self, world, renderer, posx, posy, wwidth, wheight):
         bulletwidth, bulletheight = lm.NDCToSC(.01, .025, wwidth, wheight)
-        super(EnemyBullet, self).__init__(world, int(bulletwidth), int(bulletheight))
+        super(EnemyBullet, self).__init__(world, renderer, int(bulletwidth), int(bulletheight))
         self.sprite.position = posx, posy
         EnemyBullet.height = bulletheight
         EnemyBullet.maxheight = wheight

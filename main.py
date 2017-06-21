@@ -9,25 +9,6 @@ import ui
 keeprunning = True
 renderer = None
 
-# -------------------------------------------------------------------------------
-# NOTE FOR SARAH -- I think we can delete both these classes -- they aren't used
-# any longer with the way the renderer is created below. this may mean we can
-# also change the clear operation to not just delete everything and truly clear
-# the window
-# -------------------------------------------------------------------------------
-class SoftwareRenderer(sdl2.ext.SoftwareSpriteRenderSystem):
-    def __init__(self, window):
-        super(SoftwareRenderer, self).__init__(window)
-
-    def render(self, components):
-        sdl2.ext.fill(self.surface, sdl2.ext.Color(0, 0, 0))
-        super(SoftwareRenderer, self).render(components)
-
-class TextureRenderer(sdl2.ext.TextureSpriteRenderSystem):
-    def __init__(self, renderer):
-        super(TextureRenderer, self).__init__(renderer)
-        self.renderer = renderer
-
 def clear(world, enemies):
     print "clearing"
     for enemy in enemies:
@@ -166,7 +147,7 @@ def main():
     # Our game object setup
     ###########################################################################
     # create player object
-    player1 = draw.Player(world, width, height, 0.5, 1.0, 66, 28.8)
+    player1 = draw.Player(world, renderer, width, height, 0.5, 1.0, 66, 28.8)
     bullets = player1.bullets
 
     # create enemies
@@ -177,7 +158,7 @@ def main():
     while y < .4:
         x = xoffset
         while x < .85:
-            enemy = draw.Enemy(world, width, height, x, y, 0.075, 0.03)
+            enemy = draw.Enemy(world, renderer, width, height, x, y, 0.075, 0.03)
             enemies.append(enemy)
             x += xoffset
         y += yoffset
