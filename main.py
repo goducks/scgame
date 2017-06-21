@@ -7,25 +7,18 @@ import time
 import ui
 
 keeprunning = True
-renderer = None
 
-def clear(world, enemies):
+def clear(renderer):
     print "clearing"
-    for enemy in enemies:
-        enemy.remove()
-    del enemies[:]
-    render(world)
-    # renderer = sdl2.SDL_CreateRenderer(window.window, -1, 0)
-    # sdl2.SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255)
-    # sdl2.SDL_RenderFillRect(renderer, None)
-    # sdl2.SDL_RenderPresent(renderer)
+    renderer.color = sdl2.ext.Color(0, 0, 0, 255)
+    renderer.clear()
+    renderer.present()
 
 def gameover():
     sdl2.SDL_Delay(1000)
     # time.sleep(2)
     sdl2.ext.quit()
     quit()
-
 
 # -------------------------------------------------------------------------------
 def update(player, bullets, enemyblock, enemies, time):
@@ -42,9 +35,6 @@ def update(player, bullets, enemyblock, enemies, time):
             return False
             break
         player.getInput(event)
-#    if not keeprunning:
-#        clear()
-#        gameover()
     if keeprunning:
         player.update(time)
         enemyblock.update(time, enemies)
@@ -54,8 +44,8 @@ def update(player, bullets, enemyblock, enemies, time):
             ebullet.update(time)
             hit = collision.checkCollision(ebullet, player)
             if hit:
-                ebullet.delete()
-                enemyblock.bullets.remove(ebullet)
+                print "enemy hit"
+                enemyblock.removebullet(ebullet)
                 player.lostlife()
                 if player.lives <= 0:
                     keeprunning = False
@@ -78,11 +68,19 @@ def update(player, bullets, enemyblock, enemies, time):
 
     return True
 
-
 # -------------------------------------------------------------------------------
-def render(world):
+def render(renderer):
+
+    # clear to black
+    renderer.color = sdl2.ext.Color(0, 0, 0, 255)
     renderer.clear()
-    world.process()
+
+    # iterate the global draw list
+    for di in draw.Drawable.drawList:
+        di.render(renderer)
+
+    # present renderer results
+    renderer.present()
 
 # -------------------------------------------------------------------------------
 def main():
@@ -123,19 +121,12 @@ def main():
     RESOURCES = sdl2.ext.Resources(__file__, "resources")
     sdl2.ext.init()
 
-    # create world
-    world = sdl2.ext.World()
-
     # create window
     window = sdl2.ext.Window("Space Invaders", size=(width, height))
     window.show()
 
     # create a sprite renderer starting with a base sdl2ext renderer
-    global renderer
     renderer = sdl2.ext.Renderer(window)
-    factory = sdl2.ext.SpriteFactory(sdl2.ext.TEXTURE, renderer=renderer)
-    spriterenderer = factory.create_sprite_render_system()
-    world.add_system(spriterenderer)
 
     # create ui system
     # SARAH -- this is commented out ONLY to get the sprites rendering again
@@ -147,7 +138,7 @@ def main():
     # Our game object setup
     ###########################################################################
     # create player object
-    player1 = draw.Player(world, renderer, width, height, 0.5, 1.0, 66, 28.8)
+    player1 = draw.Player(renderer, width, height, 0.5, 1.0, 66, 28.8)
     bullets = player1.bullets
 
     # create enemies
@@ -158,7 +149,7 @@ def main():
     while y < .4:
         x = xoffset
         while x < .85:
-            enemy = draw.Enemy(world, renderer, width, height, x, y, 0.075, 0.03)
+            enemy = draw.Enemy(renderer, width, height, x, y, 0.075, 0.03)
             enemies.append(enemy)
             x += xoffset
         y += yoffset
@@ -169,7 +160,7 @@ def main():
     top = enemies[0].sprite.y
     bottom = enemies[-1].sprite.y + enemies[-1].sprite.height
     right = enemies[-1].sprite.x + enemies[-1].sprite.width
-    enemyblock = draw.EnemyBlock(world, right, bottom, left, top)
+    enemyblock = draw.EnemyBlock(right, bottom, left, top)
 
     ###########################################################################
 
@@ -182,11 +173,11 @@ def main():
         #######################################################################
         # add all per-frame work here
         if not keeprunning:
-            clear(world, width, height, enemies)
+            clear(renderer)
             gameover()
         else:
             running = update(player1, bullets, enemyblock, enemies, lastDelta)
-            render(world)
+            render(renderer)
         #######################################################################
 
         stop = ti.default_timer()
