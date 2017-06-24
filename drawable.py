@@ -29,7 +29,7 @@ class Drawable(GameObject):
 
     # on class instance destroy, remove from drawList
     def delete(self):
-        print "removing from drawlist"
+        # print "removing from drawlist"
         Drawable.drawList.remove(self)
 
     def update(self, time):
@@ -51,6 +51,7 @@ class Player(Drawable):
         playerposy -= playerheight + 10
         super(Player, self).__init__(renderer, int(playerwidth), int(playerheight))
         self.sprite.position = int(playerposx), int(playerposy)
+        Player.score = 0
         Player.vx = 0
         Player.width = playerwidth
         Player.height = playerheight
@@ -114,15 +115,16 @@ class Bullet(Drawable):
         self.sprite.y += lm.NDCToSC_y(self.vy * time, self.maxheight)
 
     def remove(self):
-        print "removing bullet"
+        # print "removing bullet"
         self.delete()
 
 class Enemy(Drawable):
-    def __init__(self, renderer, wwidth, wheight, posx=0.0, posy=0.0, width=0.0, height=0.0):
+    def __init__(self, renderer, points, wwidth, wheight, posx=0.0, posy=0.0, width=0.0, height=0.0):
         enemywidth, enemyheight = lm.NDCToSC(width, height, wwidth, wheight)
         enemyposx, enemyposy = lm.NDCToSC(posx, posy, wwidth, wheight)
         super(Enemy, self).__init__(renderer, int(enemywidth), int(enemyheight))
         self.sprite.position = int(enemyposx), int(enemyposy)
+        self.points = points
         Enemy.width = enemywidth
         Enemy.height = enemyheight
         Enemy.maxwidth = wwidth - lm.NDCToSC_x(.05, wwidth)
@@ -149,7 +151,7 @@ class Enemy(Drawable):
                                             self.sprite.y, self.maxwidth, self.maxheight))
 
     def remove(self):
-        print "removing enemy"
+        # print "removing enemy"
         self.delete()
 
 class EnemyBlock(GameObject):
@@ -205,5 +207,21 @@ class EnemyBullet(Drawable):
         self.sprite.y += lm.NDCToSC_y(self.vy * time, self.maxheight)
 
     def remove(self):
-        print "removing enemybullet"
+        # print "removing enemybullet"
+        self.delete()
+
+class Shield(Drawable):
+    def __init__(self, renderer, posx, posy, wwidth, wheight):
+        shieldwidth, shieldheight = lm.NDCToSC(.175, .1, wwidth, wheight)
+        shieldposx, shieldposy = lm.NDCToSC(posx, posy, wwidth, wheight)
+        super(Shield, self).__init__(renderer, int(shieldwidth), int(shieldheight))
+        self.sprite.position = int(shieldposx), int(shieldposy)
+        Shield.health = 5
+        print self.sprite.color
+
+    def hit(self):
+        self.health -= 1
+        self.sprite.color._r += 40
+
+    def remove(self):
         self.delete()
