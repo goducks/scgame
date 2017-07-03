@@ -16,7 +16,7 @@ from sdl2.sdlttf import (TTF_OpenFont, TTF_CloseFont,
 class textMaker(object):
     def __init__(self, renderer, text = "", xpos = 0, ypos = 0, fontSize = 24,
                        textColor = pixels.SDL_Color(255, 255, 255),
-                       backgroundColor = pixels.SDL_Color(0, 0, 0)):
+                       backgroundColor = pixels.SDL_Color(0, 0, 0), fontname = "Arial.ttf"):
         sdl2.SDL_ClearError()
         if isinstance(renderer, sdl2ext.Renderer):
             self.renderer = renderer.renderer
@@ -29,11 +29,15 @@ class textMaker(object):
         # this font can be downloaded from: http://www.glukfonts.pl/font.php?font=Glametrix
         #  font = os.path.join(os.path.dirname(__file__), 'font', 'Glametrix.otf')
         # this font is just copied from your Mac in /Library/fonts/Arial.ttf to the 'font' folder
+        if fontname == "":
+            raise TTF_GetError()
+
         TTF_Init()
-        font = os.path.join(os.path.dirname(__file__), 'resources/fonts', '8-BIT WONDER.TTF')
+        font = os.path.join(os.path.dirname(__file__), 'resources/fonts', fontname)
         p = sdl2.SDL_GetError()
         if font is None or not p == '':
             print p
+            raise TTF_GetError()
 
         self.font = TTF_OpenFont(font, fontSize)
         if self.font is None:
@@ -46,7 +50,12 @@ class textMaker(object):
         self.backgroundColor = backgroundColor
         self.texture = self._createTexture()
         drawable.Drawable.drawList.append(self)
-        TTF_CloseFont(self.font)
+        # TODO
+        # I'm not sure if Sarah added this or if it was original code, but closing the font
+        # at the end of the init means subsequent updateTexture calls will fail. It seems more
+        # logical to keep the font open for the duration of the instance lifetime. That said,
+        # at some point we need to ensure we are cleaning up properly
+        # TTF_CloseFont(self.font)
 
     def _createTexture(self):
         textSurface = TTF_RenderText_Shaded(self.font, self._text, self.textColor, self.backgroundColor)
@@ -72,12 +81,10 @@ class textMaker(object):
         dst.h = h.contents.value
         sdl2.SDL_RenderCopy(renderer.renderer, self.texture, None, dst)
 
-    @property
-    def text(self):
+    def getText(self):
         return self._text
 
-    @text.setter
-    def text(self, value):
+    def setText(self, value):
         if self._text == value:
             return
         self._text = value
@@ -89,11 +96,12 @@ class renderLives(textMaker):
         self.x = xpos
         self.y = ypos
         renderLives.renderer = renderer
-        super(renderLives, self).__init__(self.renderer, self.message, self.x, self.y)
+        super(renderLives, self).__init__(self.renderer, self.message, self.x, self.y,
+                                          fontname="8-BIT WONDER.TTF")
 
     def updateLives(self, lives):
         self.message = "Lives " + str(lives)
-        super(renderLives, self).__init__(renderLives.renderer, self.message, self.x, self.y)
+        self.setText(self.message)
 
 class renderScore(textMaker):
     def __init__(self, renderer, score, xpos, ypos):
@@ -101,8 +109,9 @@ class renderScore(textMaker):
         self.x = xpos
         self.y = ypos
         renderScore.renderer = renderer
-        super(renderScore, self).__init__(self.renderer, self.message, self.x, self.y)
+        super(renderScore, self).__init__(self.renderer, self.message, self.x, self.y,
+                                          fontname="8-BIT WONDER.TTF")
 
     def updateScore(self, score):
         self.message = "Score " + str(score)
-        super(renderScore, self).__init__(renderScore.renderer, self.message, self.x, self.y)
+        self.setText(self.message)

@@ -21,7 +21,8 @@ def clear(renderer):
 
 def gameover(renderer):
     del draw.Drawable.drawList[:]
-    gameover = ui.textMaker(renderer, "GAME OVER", width / 5, (height / 2) - 50, 40)
+    gameover = ui.textMaker(renderer, "GAME OVER", width / 5, (height / 2) - 50, 40,
+                            fontname="8-BIT WONDER.TTF")
     count = 0
     while count < 1000:
         render(renderer)
