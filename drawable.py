@@ -34,6 +34,11 @@ class Drawable(GameObject):
         # print "removing from drawlist"
         Drawable.drawList.remove(self)
 
+    # force clear drawList contents
+    @staticmethod
+    def clearAll():
+        del Drawable.drawList[:]
+
     def update(self, time):
         pass
 

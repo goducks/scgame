@@ -6,12 +6,12 @@ import timeit as ti
 import time
 import ui
 
-keeprunning = True
+gameIsActive = True
 width = 0
 height = 0
 renderer = None
 
-
+# -------------------------------------------------------------------------------
 def clear(renderer):
     print "clearing"
     renderer.color = sdl2.ext.Color(0, 0, 0, 255)
@@ -19,21 +19,22 @@ def clear(renderer):
     renderer.present()
 
 
+# -------------------------------------------------------------------------------
 def gameover(renderer):
-    del draw.Drawable.drawList[:]
+    global gameIsActive
+
+    # Empty the current drawlist
+    draw.Drawable.clearAll()
+    # Add ONLY the gameover text
+    # TODO: should also display final score!
     gameover = ui.textMaker(renderer, "GAME OVER", width / 5, (height / 2) - 50, 40,
                             fontname="8-BIT WONDER.TTF")
-    count = 0
-    while count < 1000:
-        render(renderer)
-        count += 1
-    # time.sleep(2)
-    sdl2.ext.quit()
-    quit()
+    # Signal update function to end
+    gameIsActive = False
 
 # -------------------------------------------------------------------------------
 def update(player, lives, score, bullets, enemycontrol, shields, time):
-    global keeprunning
+    global gameIsActive
     # our main game loop
 
     # read remote inputs
@@ -46,11 +47,11 @@ def update(player, lives, score, bullets, enemycontrol, shields, time):
             return False
             break
         player.getInput(event)
-    if keeprunning:
+    if gameIsActive:
         player.update(time)
         enemycontrol.update(time)
         if enemycontrol.checkWin(player):
-            keeprunning = False
+            gameover(renderer)
         for enemy in enemycontrol.enemies:
             enemy.update(time)
         for ebullet in enemycontrol.bullets:
@@ -72,7 +73,7 @@ def update(player, lives, score, bullets, enemycontrol, shields, time):
                 player.lostlife()
                 lives.updateLives(player.lives)
                 if player.lives <= 0:
-                    keeprunning = False
+                    gameover(renderer)
                 break
         for bullet in bullets:
             bullet.update(time)
@@ -225,17 +226,26 @@ def main():
     running = True
     minFrameSecs = 1.0 / frameRateLimit
     lastDelta = 0.0
+    quitLimit = 2.0
+    quitTimer = 0.0
+    if options.debug:
+        fpsCounter = ui.textMaker(renderer, "FPS: 0", width - 50, height - 35, 12,
+                                  fontname="Arial.ttf")
+
     while running:
         start = ti.default_timer()
 
         #######################################################################
         # add all per-frame work here
-        if not keeprunning:
-            clear(renderer)
-            gameover(renderer)
+        if not gameIsActive:
+            quitTimer = quitTimer + lastDelta
+            if (quitTimer >= quitLimit):
+                break
         else:
             running = update(player1, lives, score, bullets, enemycontrol, shields, lastDelta)
-            render(renderer)
+
+        # Always render
+        render(renderer)
         #######################################################################
 
         stop = ti.default_timer()
@@ -245,8 +255,8 @@ def main():
             time.sleep(minFrameSecs - lastDelta)
             stop = ti.default_timer()
             lastDelta = stop - start
-        if (options.debug):
-            print "Update: ", lastDelta
+        if options.debug:
+            fpsCounter.setText("FPS: " + str(int(1.0 / lastDelta)))
 
     # cleanup
     sdl2.ext.quit()
