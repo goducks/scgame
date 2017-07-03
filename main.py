@@ -34,8 +34,9 @@ def gameover(renderer):
 
 # -------------------------------------------------------------------------------
 def update(player, lives, score, bullets, enemycontrol, shields, time):
-    global gameIsActive
     # our main game loop
+
+    global gameIsActive
 
     # read remote inputs
     # ...
@@ -99,9 +100,6 @@ def update(player, lives, score, bullets, enemycontrol, shields, time):
                     break
         if len(enemycontrol.enemies) < 1:
             enemycontrol.reset()
-
-    # update game state
-    # ...
 
     # send local state to remotes
 
@@ -229,7 +227,7 @@ def main():
     quitLimit = 2.0
     quitTimer = 0.0
     if options.debug:
-        fpsCounter = ui.textMaker(renderer, "FPS: 0", width - 50, height - 35, 12,
+        fpsCounter = ui.textMaker(renderer, "FPS: 0", width - 55, height - 14, 12,
                                   fontname="Arial.ttf")
 
     while running:
@@ -238,7 +236,7 @@ def main():
         #######################################################################
         # add all per-frame work here
         if not gameIsActive:
-            quitTimer = quitTimer + lastDelta
+            quitTimer += lastDelta
             if (quitTimer >= quitLimit):
                 break
         else:
