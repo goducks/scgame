@@ -30,46 +30,8 @@ def gameover(renderer):
     sdl2.ext.quit()
     quit()
 
-
-def reset(player, bullets, enemyblock, enemies):
-    savelives = player.lives
-    savescore = player.score
-    player1 = draw.Player(renderer, width, height, 0.5, 1.0, 66, 28.8)
-    player1.score = savescore
-    player1.lives = savelives
-    del bullets[:]
-    bullets = player1.bullets
-
-    del enemies[:]
-    yoffset = .05
-    xoffset = .1
-    scorecountdown = 15
-    points = 40
-    y = yoffset
-    while y < .4:
-        x = xoffset
-        while x < .85:
-            if scorecountdown == 0 and not points == 10:
-                points -= 10
-                scorecountdown = 15
-            enemy = draw.Enemy(renderer, points, width, height, x, y, 0.075, 0.03)
-            enemies.append(enemy)
-            scorecountdown -= 1
-            x += xoffset
-        y += yoffset
-
-    # creates rectangle with enemies
-    # uses first block in list and last block in list (top left and bottom right)
-    left = enemies[0].sprite.x
-    top = enemies[0].sprite.y
-    bottom = enemies[-1].sprite.y + enemies[-1].sprite.height
-    right = enemies[-1].sprite.x + enemies[-1].sprite.width
-    enemyblock = draw.EnemyBlock(right, bottom, left, top)
-    return player1, bullets, enemyblock, enemies
-
-
 # -------------------------------------------------------------------------------
-def update(player, lives, score, bullets, enemyblock, enemies, shields, time):
+def update(player, lives, score, bullets, enemycontrol, shields, time):
     global keeprunning
     # our main game loop
 
@@ -85,16 +47,18 @@ def update(player, lives, score, bullets, enemyblock, enemies, shields, time):
         player.getInput(event)
     if keeprunning:
         player.update(time)
-        enemyblock.update(time, enemies)
-        for enemy in enemies:
+        enemycontrol.update(time)
+        if enemycontrol.checkWin(player):
+            keeprunning = False
+        for enemy in enemycontrol.enemies:
             enemy.update(time)
-        for ebullet in enemyblock.bullets:
+        for ebullet in enemycontrol.bullets:
             ebullet.update(time)
             for shield in shields:
                 hit = collision.checkCollision(ebullet, shield)
                 if hit:
                     ebullet.remove()
-                    enemyblock.bullets.remove(ebullet)
+                    enemycontrol.bullets.remove(ebullet)
                     shield.hit()
                     if shield.health <= 0:
                         shield.remove()
@@ -103,7 +67,7 @@ def update(player, lives, score, bullets, enemyblock, enemies, shields, time):
             hit = collision.checkCollision(ebullet, player)
             if hit:
                 # print "enemy hit"
-                enemyblock.removebullet(ebullet)
+                enemycontrol.removebullet(ebullet)
                 player.lostlife()
                 lives.updateLives(player.lives)
                 if player.lives <= 0:
@@ -121,19 +85,18 @@ def update(player, lives, score, bullets, enemyblock, enemies, shields, time):
                         shield.remove()
                         shields.remove(shield)
                     break
-            for enemy in enemies:
+            for enemy in enemycontrol.enemies:
                 hit = collision.checkCollision(bullet, enemy)
                 if hit:
                     player.score += enemy.points
                     score.updateScore(player.score)
                     enemy.remove()
-                    enemies.remove(enemy)
+                    enemycontrol.enemies.remove(enemy)
                     bullet.remove()
                     bullets.remove(bullet)
                     break
-        if len(enemies) == 0:
-            sdl2.SDL_Delay(1000)
-            # reset here
+        if len(enemycontrol.enemies) < 1:
+            enemycontrol.reset()
 
     # update game state
     # ...
@@ -219,8 +182,9 @@ def main():
     lives = ui.renderLives(renderer, player1.lives, 5, 5)
     score = ui.renderScore(renderer, player1.score, width - (width / 3) - 10, 5)
 
+    '''''
     # create enemies
-    enemies = list()
+    enemies = draw.EnemyController.createEnemies(renderer, width, height)
     yoffset = .05
     xoffset = .1
     scorecountdown = 15
@@ -244,13 +208,14 @@ def main():
     top = enemies[0].sprite.y
     bottom = enemies[-1].sprite.y + enemies[-1].sprite.height
     right = enemies[-1].sprite.x + enemies[-1].sprite.width
-    enemyblock = draw.EnemyBlock(right, bottom, left, top)
+    '''''
+    enemycontrol = draw.EnemyController(renderer, width, height)
 
     # creates shields
     shields = list()
     x = .1
     while x <= .75:
-        shield = draw.Shield(renderer, x, .75, width, height)
+        shield = draw.Shield(renderer, x, .8, width, height)
         shields.append(shield)
         x += .30
 
@@ -268,7 +233,7 @@ def main():
             clear(renderer)
             gameover(renderer)
         else:
-            running = update(player1, lives, score, bullets, enemyblock, enemies, shields, lastDelta)
+            running = update(player1, lives, score, bullets, enemycontrol, shields, lastDelta)
             render(renderer)
         #######################################################################
 
