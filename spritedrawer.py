@@ -5,7 +5,7 @@ import drawable
 from ctypes import c_int, pointer, cast, py_object, c_void_p
 from sdl2 import (pixels, render, events as sdlevents, surface, error,
                     timer)
-import sdl2.sdlimage as sdlimage
+# import sdl2.sdlimage as sdlimage
 
 class spriteMaker(object):
     def __init__(self, renderer, image, xpos = 0, ypos = 0):
