@@ -114,7 +114,7 @@ def render(renderer):
 
     # iterate the global draw list
     for di in draw.Drawable.drawList:
-        di.render(renderer)
+        di.render()
 
     # test.renderTexture(image, renderer, 0, 0)
     # present renderer results

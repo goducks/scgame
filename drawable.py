@@ -42,15 +42,15 @@ class Drawable(GameObject):
     def update(self, time):
         pass
 
-    def render(self, renderer):
+    def render(self):
         # if self.type == "player":
             # spritedrawer.drawPlayer(renderer)
         # else:
-            renderer.color = self.sprite.color
+            self.renderer.color = self.sprite.color
             # for now, we're only drawing filled rectangles. we can specialize this function as necessary
             # draw_rect will draw outline only, fill fills them in
             # renderer.draw_rect([(self.sprite.x, self.sprite.y, self.sprite.width, self.sprite.height)])
-            renderer.fill([(self.sprite.x, self.sprite.y, self.sprite.width, self.sprite.height)])
+            self.renderer.fill([(self.sprite.x, self.sprite.y, self.sprite.width, self.sprite.height)])
 
 class Player(Drawable):
 

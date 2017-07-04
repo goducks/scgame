@@ -1,11 +1,9 @@
 import os
 import sdl2
 import sdl2.ext as sdl2ext
+import sdl2.sdlimage as sdlimage
+from ctypes import c_int, pointer
 import drawable
-from ctypes import c_int, pointer, cast, py_object, c_void_p
-from sdl2 import (pixels, render, events as sdlevents, surface, error,
-                    timer)
-# import sdl2.sdlimage as sdlimage
 
 class spriteMaker(object):
     def __init__(self, renderer, image, xpos = 0, ypos = 0):
@@ -19,13 +17,13 @@ class spriteMaker(object):
 
         sdlimage.IMG_Init(sdlimage.IMG_INIT_PNG)
         self.surface = sdlimage.IMG_Load(image)
-        self.texture = render.SDL_CreateTextureFromSurface(self.renderer, self.surface)
+        self.texture = sdl2.render.SDL_CreateTextureFromSurface(self.renderer, self.surface)
 
         self.x = xpos
         self.y = ypos
         drawable.Drawable.drawList.append(self)
-        render.SDL_DestroyTexture(self.texture)
-        surface.SDL_FreeSurface(self.surface)
+        sdl2.render.SDL_DestroyTexture(self.texture)
+        sdl2.surface.SDL_FreeSurface(self.surface)
         sdlimage.IMG_Quit()
 
     def render(self, renderer):

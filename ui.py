@@ -2,25 +2,17 @@ import os
 import sdl2
 import sdl2.ext as sdl2ext
 import drawable
-from ctypes import c_int, pointer, cast, py_object, c_void_p
-from sdl2 import (pixels, render, events as sdlevents, surface, error,
-                    timer)
-from sdl2.sdlttf import (TTF_OpenFont, TTF_CloseFont,
-                         TTF_RenderText_Shaded,
-                         TTF_GetError,
-                         TTF_Init,
-                         TTF_Quit
-                         )
+from ctypes import c_int, pointer
+from sdl2.sdlttf import (TTF_OpenFont, TTF_CloseFont, TTF_RenderText_Shaded, TTF_GetError, TTF_Init, TTF_Quit )
 
-
-class textMaker(object):
+class textMaker(drawable.GameObject):
     def __init__(self, renderer, text = "", xpos = 0, ypos = 0, fontSize = 24,
-                       textColor = pixels.SDL_Color(255, 255, 255),
-                       backgroundColor = pixels.SDL_Color(0, 0, 0), fontname = "Arial.ttf"):
+                       textColor = sdl2.pixels.SDL_Color(255, 255, 255),
+                       backgroundColor = sdl2.pixels.SDL_Color(0, 0, 0), fontname = "Arial.ttf"):
         sdl2.SDL_ClearError()
         if isinstance(renderer, sdl2ext.Renderer):
             self.renderer = renderer.renderer
-        elif isinstance(renderer, render.SDL_Renderer):
+        elif isinstance(renderer, sdl2.render.SDL_Renderer):
             self.renderer = renderer
         else:
             raise TypeError("unsupported renderer type")
@@ -61,25 +53,25 @@ class textMaker(object):
         textSurface = TTF_RenderText_Shaded(self.font, self._text, self.textColor, self.backgroundColor)
         if textSurface is None:
             raise TTF_GetError()
-        texture = render.SDL_CreateTextureFromSurface(self.renderer, textSurface)
+        texture = sdl2.render.SDL_CreateTextureFromSurface(self.renderer, textSurface)
         if texture is None:
             raise sdl2ext.SDLError()
-        surface.SDL_FreeSurface(textSurface)
+        sdl2.surface.SDL_FreeSurface(textSurface)
         return texture
 
     def _updateTexture(self):
         textureToDelete = self.texture
         self.texture = self._createTexture()
-        render.SDL_DestroyTexture(textureToDelete)
+        sdl2.render.SDL_DestroyTexture(textureToDelete)
 
-    def render(self, renderer):
+    def render(self):
         dst = sdl2.SDL_Rect(self.x, self.y)
         w = pointer(c_int(0))
         h = pointer(c_int(0))
         sdl2.SDL_QueryTexture(self.texture, None, None, w, h)
         dst.w = w.contents.value
         dst.h = h.contents.value
-        sdl2.SDL_RenderCopy(renderer.renderer, self.texture, None, dst)
+        sdl2.SDL_RenderCopy(self.renderer, self.texture, None, dst)
 
     def getText(self):
         return self._text
@@ -89,6 +81,9 @@ class textMaker(object):
             return
         self._text = value
         self._updateTexture()
+
+    def update(self, time):
+        pass
 
 class renderLives(textMaker):
     def __init__(self, renderer, lives, xpos, ypos):
