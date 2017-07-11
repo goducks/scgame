@@ -92,7 +92,7 @@ class renderLives(textMaker):
         self.y = ypos
         renderLives.renderer = renderer
         super(renderLives, self).__init__(self.renderer, self.message, self.x, self.y,
-                                          fontname="8-BIT WONDER.TTF")
+                                          16, fontname="8-BIT WONDER.TTF")
 
     def updateLives(self, lives):
         self.message = "Lives " + str(lives)
@@ -105,7 +105,7 @@ class renderScore(textMaker):
         self.y = ypos
         renderScore.renderer = renderer
         super(renderScore, self).__init__(self.renderer, self.message, self.x, self.y,
-                                          fontname="8-BIT WONDER.TTF")
+                                          16, fontname="8-BIT WONDER.TTF")
 
     def updateScore(self, score):
         self.message = "Score " + str(score)

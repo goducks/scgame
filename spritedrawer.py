@@ -6,39 +6,60 @@ from ctypes import c_int, pointer
 import drawable
 
 class spriteMaker(object):
-    def __init__(self, renderer, image, xpos = 0, ypos = 0):
-        sdl2.SDL_ClearError()
+    def __init__(self, renderer, x, y, w, h, imagename, dupetexture, useimagesize=False):
+        if imagename == '' and dupetexture is None:
+            raise sdl2ext.SDLError()
+
         if isinstance(renderer, sdl2ext.Renderer):
             self.renderer = renderer.renderer
-        elif isinstance(renderer, render.SDL_Renderer):
+        elif isinstance(renderer, sdl2.render.SDL_Renderer):
             self.renderer = renderer
+
+        if dupetexture is not None:
+            self.texture = dupetexture
         else:
-            raise TypeError("unsupported renderer type")
+            fullpath = os.path.join(os.path.dirname(__file__), 'resources/images', imagename)
+            self.texture = self._createTexture(fullpath)
+        if self.texture is None:
+            raise sdl2ext.SDLError()
 
-        sdlimage.IMG_Init(sdlimage.IMG_INIT_PNG)
-        self.surface = sdlimage.IMG_Load(image)
-        self.texture = sdl2.render.SDL_CreateTextureFromSurface(self.renderer, self.surface)
+        self.x = x
+        self.y = y
+        if useimagesize:
+            # reset size if using image dimensions
+            pw = pointer(c_int(0))
+            ph = pointer(c_int(0))
+            sdl2.SDL_QueryTexture(self.texture, None, None, pw, ph)
+            self.width = pw.contents.value
+            self.height = ph.contents.value
+        else:
+            self.width = w
+            self.height = h
 
-        self.x = xpos
-        self.y = ypos
         drawable.Drawable.drawList.append(self)
-        sdl2.render.SDL_DestroyTexture(self.texture)
-        sdl2.surface.SDL_FreeSurface(self.surface)
-        sdlimage.IMG_Quit()
 
-    def render(self, renderer):
-        dst = sdl2.SDL_Rect(self.x, self.y)
-        w = pointer(c_int(0))
-        h = pointer(c_int(0))
-        sdl2.SDL_QueryTexture(self.texture, None, None, w, h)
-        dst.w = w.contents.value
-        dst.h = h.contents.value
-        sdl2.SDL_RenderCopy(renderer.renderer, self.texture, None, dst)
+    def _createTexture(self, fullpath):
+        surface = sdlimage.IMG_Load(fullpath)
+        if surface is None:
+            raise sdlimage.IMG_GetError()
+        texture = sdl2.render.SDL_CreateTextureFromSurface(self.renderer, surface)
+        if texture is None:
+            raise sdl2ext.SDLError()
+        sdl2.surface.SDL_FreeSurface(surface)
+        return texture
 
-class drawPlayer(spriteMaker):
-    def __init__(self, renderer):
-        image = os.path.join(os.path.dirname(__file__), 'resources/images', 'ship.png')
-        super(drawPlayer, self).__init__(renderer, image)
+    def render(self):
+        dst = sdl2.SDL_Rect(self.x, self.y, self.width, self.height)
+        sdl2.SDL_RenderCopy(self.renderer, self.texture, None, dst)
 
-    def getTexture(self):
-        return self.texture
+    def getHeight(self):
+        return self.height
+
+    def getWidth(self):
+        return self.width
+
+    def getX(self):
+        return self.x
+
+    def getY(self):
+        return self.y

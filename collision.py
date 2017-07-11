@@ -5,12 +5,12 @@ llAx, llAy = 0, 0
 def checkCollision(objA, objB):
     global llAx, llAy
     oldllx, oldlly = llAx, llAy
-    llAx, llAy = objA.sprite.x, (objA.sprite.y + objA.sprite.height)
-    llBx, llBy = objB.sprite.x, (objB.sprite.y + objB.sprite.height)
-    urAx, urAy = (objA.sprite.x + objA.sprite.width), objA.sprite.y
-    urBx, urBy = (objB.sprite.x + objB.sprite.width), objB.sprite.y
+    llAx, llAy = objA.getX(), (objA.getY() + objA.getHeight())
+    llBx, llBy = objB.getX(), (objB.getY() + objB.getHeight())
+    urAx, urAy = (objA.getX() + objA.getWidth()), objA.getY()
+    urBx, urBy = (objB.getX() + objB.getWidth()), objB.getY()
     if isinstance(objA, drawable.Bullet):
-        llAx = objA.sprite.x - objA.sprite.width
+        llAx = objA.getX() - objA.getWidth()
     if (urAy <= llBy) and (llAy >= urBy) and (urAx >= llBx) and (llAx <= urBx):
         return True
     return False

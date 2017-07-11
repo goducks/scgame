@@ -20,7 +20,7 @@ def clear(renderer):
 
 
 # -------------------------------------------------------------------------------
-def gameover(renderer):
+def gameover(renderer, player):
     global gameIsActive
 
     # Empty the current drawlist
@@ -28,6 +28,10 @@ def gameover(renderer):
     # Add ONLY the gameover text
     # TODO: should also display final score!
     gameover = ui.textMaker(renderer, "GAME OVER", width / 5, (height / 2) - 50, 40,
+                            fontname="8-BIT WONDER.TTF")
+    text = "SCORE " + str(player.score)
+    print type(text)
+    score = ui.textMaker(renderer, text, width / 5, (height / 2), 30,
                             fontname="8-BIT WONDER.TTF")
     # Signal update function to end
     gameIsActive = False
@@ -74,7 +78,7 @@ def update(player, lives, score, bullets, enemycontrol, shields, time):
                 player.lostlife()
                 lives.updateLives(player.lives)
                 if player.lives <= 0:
-                    gameover(renderer)
+                    gameover(renderer, player)
                 break
         for bullet in bullets:
             bullet.update(time)
@@ -176,39 +180,12 @@ def main():
     # Our game object setup
     ###########################################################################
     # create player object
-    player1 = draw.Player(renderer, width, height, 0.5, 1.0, 66, 28.8)
+    player1 = draw.Player(renderer, width, height, 0.25, 1.0, 66, 28.8)
     bullets = player1.bullets
 
     lives = ui.renderLives(renderer, player1.lives, 5, 5)
-    score = ui.renderScore(renderer, player1.score, width - (width / 3) - 10, 5)
+    score = ui.renderScore(renderer, player1.score, width - (width / 3) - 25, 5)
 
-    '''''
-    # create enemies
-    enemies = draw.EnemyController.createEnemies(renderer, width, height)
-    yoffset = .05
-    xoffset = .1
-    scorecountdown = 15
-    points = 40
-    y = yoffset
-    while y < .4:
-        x = xoffset
-        while x < .85:
-            if scorecountdown == 0 and not points == 10:
-                points -= 10
-                scorecountdown = 15
-            enemy = draw.Enemy(renderer, points, width, height, x, y, 0.075, 0.03)
-            enemies.append(enemy)
-            scorecountdown -= 1
-            x += xoffset
-        y += yoffset
-
-    # creates rectangle with enemies
-    # uses first block in list and last block in list (top left and bottom right)
-    left = enemies[0].sprite.x
-    top = enemies[0].sprite.y
-    bottom = enemies[-1].sprite.y + enemies[-1].sprite.height
-    right = enemies[-1].sprite.x + enemies[-1].sprite.width
-    '''''
     enemycontrol = draw.EnemyController(renderer, width, height)
 
     # creates shields
