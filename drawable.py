@@ -1,19 +1,20 @@
-import sdl2
-import sdl2.ext
-import localmath as lm
-import spritedrawer
-from random import randint
 from abc import ABCMeta, abstractmethod
-import sdl2.sdlmixer as sdlmixer
+from ctypes import c_int, pointer
 import os
+from random import randint
+import sdl2.ext
+import sdl2.sdlimage as sdlimage
+import sdl2.sdlmixer as sdlmixer
+from sdl2.sdlttf import (TTF_OpenFont, TTF_CloseFont, TTF_RenderText_Shaded, TTF_GetError, TTF_Init, TTF_Quit )
 
+###############################################################################
 class GameObject():
     __metaclass__ = ABCMeta
 
     @abstractmethod
     def update(self, time):
         pass
-
+###############################################################################
 class Drawable(GameObject):
     # the "static" draw list
     drawList = list()
@@ -24,17 +25,14 @@ class Drawable(GameObject):
         print "Mix_OpenAudio: %s\n", sdlmixer.Mix_GetError()
         exit(2);
 
-    def __init__(self, renderer, width, height, x = 0, y = 0, filename = ""):
-        factory = sdl2.ext.SpriteFactory(sdl2.ext.SOFTWARE)
-        sprite = factory.create_texture_sprite(renderer, size=(width, height))
+    def __init__(self, width, height, x = 0, y = 0, filename = ""):
         self.filename = filename
-        self.renderer = renderer
-        self.sprite = sprite
-        self.sprite.height = height
-        self.sprite.width = width
-        self.sprite.position = x, y
+        self.height = height
+        self.width = width
+        self.x = x
+        self.y = y
         # set a random color
-        self.sprite.color = sdl2.ext.Color(randint(0, 255), randint(0, 255), randint(0, 255), 255)
+        self.color = sdl2.ext.Color(randint(0, 255), randint(0, 255), randint(0, 255), 255)
         # add to global drawList
         Drawable.drawList.append(self)
 
@@ -62,21 +60,25 @@ class Drawable(GameObject):
 
     def getY(self):
         pass
-
-
+###############################################################################
 class filledRect(Drawable):
+    renderer = None
 
-    def __init__(self, renderer, width, height, x = 0, y = 0, filename = ""):
-        factory = sdl2.ext.SpriteFactory(sdl2.ext.SOFTWARE)
-        sprite = factory.create_texture_sprite(renderer, size=(width, height))
+    @staticmethod
+    def setRenderer(rdr):
+        if isinstance(rdr, sdl2.ext.Renderer):
+            filledRect.renderer = rdr
+        else:
+            raise TypeError("unsupported renderer type")
+
+    def __init__(self, width, height, x = 0, y = 0, filename = ""):
         self.filename = filename
-        self.renderer = renderer
-        self.sprite = sprite
-        self.sprite.height = height
-        self.sprite.width = width
-        self.sprite.position = x, y
+        self.height = height
+        self.width = width
+        self.x = x
+        self.y = y
         # set a random color
-        self.sprite.color = sdl2.ext.Color(randint(0, 255), randint(0, 255), randint(0, 255), 255)
+        self.color = sdl2.ext.Color(randint(0, 255), randint(0, 255), randint(0, 255), 255)
         # add to global drawList
         Drawable.drawList.append(self)
 
@@ -84,330 +86,164 @@ class filledRect(Drawable):
         pass
 
     def render(self):
-        self.renderer.color = self.sprite.color
+        filledRect.renderer.color = self.color
         # for now, we're only drawing filled rectangles. we can specialize this function as necessary
         # draw_rect will draw outline only, fill fills them in
-        # renderer.draw_rect([(self.sprite.x, self.sprite.y, self.sprite.width, self.sprite.height)])
-        self.renderer.fill([(self.sprite.x, self.sprite.y, self.sprite.width, self.sprite.height)])
+        filledRect.renderer.fill([(self.x, self.y, self.width, self.height)])
 
     def getHeight(self):
-        return self.sprite.height
+        return self.height
 
     def getWidth(self):
-        return self.sprite.width
+        return self.width
 
     def getX(self):
-        return self.sprite.x
+        return self.x
 
     def getY(self):
-        return self.sprite.y
+        return self.y
+###############################################################################
+class spriteMaker(Drawable):
+    renderer = None
 
-class Player(spritedrawer.spriteMaker, Drawable):
-
-    def __init__(self, renderer, wwidth, wheight, posx=0.0, posy=0.0, width=0.0, height=0.0):
-        playerwidth, playerheight = lm.SC(width, height)
-        playerposx, playerposy = lm.NDCToSC(posx, posy, wwidth, wheight)
-        playerposx -= playerheight + playerheight / 2
-        playerposy -= playerheight + 10
-        super(Player, self).__init__(renderer, int(playerposx), int(playerposy), int(playerwidth), int(playerheight),
-                                     "ship.png", None, False)
-        Player.renderer = renderer
-        Player.score = 0
-        Player.vx = 0
-        Player.width = playerwidth
-        Player.height = playerheight
-        Player.maxwidth = wwidth
-        Player.maxheight = wheight
-        Player.bullets = list()
-        Player.lives = 3
-        Player.bulletcount = 5
-        path = os.path.join(os.path.dirname(__file__), 'resources/sounds', 'shoot.wav')
-        Player.shootsound = sdlmixer.Mix_LoadWAV(path)
-        path = os.path.join(os.path.dirname(__file__), 'resources/sounds', 'explosion.wav')
-        Player.hitsound = sdlmixer.Mix_LoadWAV(path)
-
-    def delete(self):
-        super(Player, self).delete()
-
-    def fire(self):
-        for bullet in self.bullets:
-            if bullet.sprite.y < -16:
-                self.bullets.remove(bullet)
-        if self.bulletcount >= .5:
-            self.bulletcount = 0
-            self.bullets.append(Bullet(Player.renderer, int(self.x + self.width / 2),
-                                       self.y, self.maxwidth, self.maxheight))
-            sdlmixer.Mix_PlayChannel(-1, self.shootsound, 0)
-
-    def getInput(self, event, number):
-        if sdl2.SDL_HasScreenKeyboardSupport:
-            if number == 0:
-                if event.type == sdl2.SDL_KEYDOWN:
-                    if event.key.keysym.sym == sdl2.SDLK_LEFT:
-                        self.vx = -.75
-                    if event.key.keysym.sym == sdl2.SDLK_RIGHT:
-                        self.vx = .75
-                    if event.key.keysym.sym == sdl2.SDLK_SPACE:
-                        self.fire()
-                elif event.type == sdl2.SDL_KEYUP:
-                    if event.key.keysym.sym in (sdl2.SDLK_LEFT, sdl2.SDLK_RIGHT):
-                        self.vx = 0
-            if number == 1:
-                if event.type == sdl2.SDL_KEYDOWN:
-                    if event.key.keysym.sym == sdl2.SDLK_a:
-                        self.vx = -.75
-                    if event.key.keysym.sym == sdl2.SDLK_d:
-                        self.vx = .75
-                    if event.key.keysym.sym == sdl2.SDLK_w:
-                        self.fire()
-                elif event.type == sdl2.SDL_KEYUP:
-                    if event.key.keysym.sym in (sdl2.SDLK_a, sdl2.SDLK_d):
-                        self.vx = 0
-
-    def lostlife(self):
-        sdlmixer.Mix_PlayChannel(-1, self.hitsound, 0)
-        self.lives -= 1
-
-    def update(self, time):
-        self.bulletcount += time
-        # width and height of sprite so it can stay in bounds
-        swidth, sheight = self.width, self.height
-        # move sprite
-        self.x += lm.NDCToSC_x(self.vx * time, self.maxwidth)
-        # checks if sprite is past the min (0)
-        self.x = max(0, self.x)
-        # position + sprite size
-        posx = self.x + swidth
-        # if the position + sprite size extends past max, stop it there
-        if posx > self.maxwidth:
-            self.x = self.maxwidth - swidth
-
-class Bullet(filledRect):
-    def __init__(self, renderer, posx, posy, wwidth, wheight):
-        bulletwidth, bulletheight = lm.NDCToSC(.01, .025, wwidth, wheight)
-        super(Bullet, self).__init__(renderer, int(bulletwidth), int(bulletheight))
-        self.sprite.position = posx, posy
-        Bullet.maxheight = wheight
-        Bullet.vy = -.5
-
-    def delete(self):
-        super(Bullet, self).delete()
-
-    def update(self, time):
-        self.sprite.y += lm.NDCToSC_y(self.vy * time, self.maxheight)
-
-    def remove(self):
-        # print "removing bullet"
-        self.delete()
-
-class Enemy(spritedrawer.spriteMaker, Drawable):
-    def __init__(self, renderer, points, speed, wwidth, wheight, posx=0.0, posy=0.0, width=0.0, height=0.0):
-        enemywidth, enemyheight = lm.NDCToSC(width, height, wwidth, wheight)
-        enemyposx, enemyposy = lm.NDCToSC(posx, posy, wwidth, wheight)
-        name = "enemy" + str(points/10) + ".png"
-        super(Enemy, self).__init__(renderer, int(enemyposx), int(enemyposy), int(enemywidth), int(enemyheight),
-                                    name, None, False)
-        self.points = points
-        Enemy.renderer = renderer
-        Enemy.width = enemywidth
-        Enemy.height = enemyheight
-        Enemy.maxwidth = wwidth - lm.NDCToSC_x(.05, wwidth)
-        Enemy.minwidth = lm.NDCToSC_x(.05, wwidth)
-        Enemy.maxheight = wheight
-        Enemy.vx = speed
-        Enemy.vy = 0
-        Enemy.move = True
-        path = os.path.join(os.path.dirname(__file__), 'resources/sounds', 'invaderkilled.wav')
-        Enemy.deathsound = sdlmixer.Mix_LoadWAV(path)
-
-    def delete(self):
-        super(Enemy, self).delete()
-
-    def update(self, time):
-        self.y += lm.NDCToSC_y(Enemy.vy * time, self.maxheight)
-        if self.move:
-            self.x += lm.NDCToSC_x(Enemy.vx * time, self.maxwidth)
-
-    def shoot(self):
-        for bullet in EnemyController.bullets:
-            if bullet.sprite.y > self.maxheight:
-                EnemyController.bullets.remove(bullet)
-        if len(EnemyController.bullets) < 1:
-            EnemyController.bullets.append(EnemyBullet(Enemy.renderer, int(self.x + self.width / 2),
-                                            self.y, self.maxwidth, self.maxheight))
-
-    def remove(self):
-        sdlmixer.Mix_PlayChannel(-1, self.deathsound, 0)
-        self.delete()
-
-class EnemyController(GameObject):
-    def __init__(self, renderer, wwidth, wheight):
-        EnemyController.level = 1
-        EnemyController.enemies = self.createEnemies(renderer, wwidth, wheight)
-        EnemyController.top = self.enemies[0].y
-        EnemyController.left = self.enemies[0].x
-        EnemyController.right = self.enemies[-1].x + self.enemies[-1].width
-        EnemyController.bottom = self.enemies[-1].y + self.enemies[-1].height
-        EnemyController.renderer = renderer
-        EnemyController.wwidth = wwidth
-        EnemyController.wheight = wheight
-        EnemyController.counter = 0
-        EnemyController.timer = 0
-        EnemyController.bullets = list()
-        EnemyController.shoottime = randint(90, 100)
-        EnemyController.UFOactive = False
-        EnemyController.UFOtime = randint(12, 15)
-        EnemyController.UFOcounter = 0
-        path = os.path.join(os.path.dirname(__file__), 'resources/sounds', 'fastinvader4.wav')
-        EnemyController.sound = sdlmixer.Mix_LoadWAV(path)
-        path = os.path.join(os.path.dirname(__file__), 'resources/sounds', 'levup.wav')
-        EnemyController.resetsound = sdlmixer.Mix_LoadWAV(path)
-
-    def createEnemies(self, renderer, wwidth, wheight):
-        enemies = list()
-        yoffset = .06
-        xoffset = .09
-        scorecountdown = 15
-        points = 40
-        speed = .25 * self.level
-        y = .125
-        while y < .45:
-            x = .1
-            while x < .85:
-                if scorecountdown == 0 and not points == 10:
-                    points -= 10
-                    scorecountdown = 15
-                enemy = Enemy(renderer, points, speed, wwidth, wheight, x, y, 0.072, 0.05)
-                enemies.append(enemy)
-                scorecountdown -= 1
-                x += xoffset
-            y += yoffset
-        return enemies
-
-    def update(self, time):
-        Enemy.vy = 0
-        if Enemy.move:
-            distancemoved = lm.NDCToSC_x(Enemy.vx * time, self.wwidth)
+    @staticmethod
+    def setRenderer(rdr):
+        if isinstance(rdr, sdl2.ext.Renderer):
+            spriteMaker.renderer = rdr.renderer
+        elif isinstance(rdr, sdl2.render.SDL_Renderer):
+            spriteMaker.renderer = rdr
         else:
-            distancemoved = 0
-        EnemyController.left += distancemoved
-        EnemyController.right += distancemoved
-        if EnemyController.right > Enemy.maxwidth or EnemyController.left < Enemy.minwidth:
-            Enemy.vx = -Enemy.vx
-            Enemy.vy = .5
-            EnemyController.counter = 15
-        if EnemyController.timer == self.shoottime:
-            shooter = randint(0, len(self.enemies) - 1)
-            self.enemies[shooter].shoot()
-            EnemyController.timer = 0
-        if EnemyController.UFOcounter >= self.UFOtime and not EnemyController.UFOactive:
-            ufo = UFO(self.renderer, self.wwidth, self.wheight)
-            EnemyController.UFOactive = True
-            EnemyController.UFOcounter = 0
-            EnemyController.enemies.append(ufo)
-        if EnemyController.counter >= .75:
-            Enemy.move = True
-            sdlmixer.Mix_PlayChannel(-1, self.sound, 0)
-            EnemyController.counter = 0
+            raise TypeError("unsupported renderer type")
+
+    def __init__(self, x, y, w, h, imagename, dupetexture, useimagesize=False):
+        if imagename == '' and dupetexture is None:
+            raise sdl2.ext.SDLError()
+
+        if dupetexture is not None:
+            self.texture = dupetexture
         else:
-            Enemy.move = False
-            EnemyController.counter += time
-        EnemyController.timer += 1
-        EnemyController.UFOcounter += time
+            fullpath = os.path.join(os.path.dirname(__file__), 'resources/images', imagename)
+            self.texture = self._createTexture(fullpath)
+        if self.texture is None:
+            raise sdl2.ext.SDLError()
 
-    def checkWin(self, player):
-        enemyheight = self.enemies[-1].y + self.enemies[0].height
-        if enemyheight >= player.y:
-            return True
+        self.x = x
+        self.y = y
+        if useimagesize:
+            # reset size if using image dimensions
+            pw = pointer(c_int(0))
+            ph = pointer(c_int(0))
+            sdl2.SDL_QueryTexture(self.texture, None, None, pw, ph)
+            self.width = pw.contents.value
+            self.height = ph.contents.value
         else:
-            return False
+            self.width = w
+            self.height = h
 
-    def removebullet(self, bullet):
-        EnemyController.bullets.remove(bullet)
-        bullet.remove()
+        Drawable.drawList.append(self)
 
-    def reset(self):
-        EnemyController.level += .8
-        del self.enemies[:]
-        EnemyController.enemies = self.createEnemies(self.renderer, self.wwidth, self.wheight)
-        EnemyController.top = self.enemies[0].y
-        EnemyController.left = self.enemies[0].x
-        EnemyController.right = self.enemies[-1].x + self.enemies[-1].width
-        EnemyController.bottom = self.enemies[-1].y + self.enemies[-1].height
-        sdlmixer.Mix_PlayChannel(-1, self.resetsound, 0)
+    def _createTexture(self, fullpath):
+        surface = sdlimage.IMG_Load(fullpath)
+        if surface is None:
+            raise sdlimage.IMG_GetError()
+        texture = sdl2.render.SDL_CreateTextureFromSurface(spriteMaker.renderer, surface)
+        if texture is None:
+            raise sdl2.ext.SDLError()
+        sdl2.surface.SDL_FreeSurface(surface)
+        return texture
 
-class UFO(spritedrawer.spriteMaker, Drawable):
-    def __init__(self, renderer, wwidth, wheight):
-        enemywidth, enemyheight = lm.NDCToSC(.108, .05, wwidth, wheight)
-        ypos = lm.NDCToSC_y(.075, wheight)
-        pickside = randint(0, 1)
-        if pickside == 0:
-            UFO.vx = -0.25
-            xpos = lm.NDCToSC_x(1, wwidth)
-        if pickside == 1:
-            UFO.vx = 0.25
-            xpos = 0
-        super(UFO, self).__init__(renderer, int(xpos), int(ypos), int(enemywidth), int(enemyheight),
-                                                                 "enemy5.png", None, False)
-        UFO.points = 100
-        UFO.width = self.width
-        if pickside == 1:
-            self.x = -self.width
-        path = os.path.join(os.path.dirname(__file__), 'resources/sounds', 'ufo_lowpitch.wav')
-        UFO.sound = sdlmixer.Mix_LoadWAV(path)
-        sdlmixer.Mix_PlayChannel(-1, self.sound, 0)
+    def render(self):
+        dst = sdl2.SDL_Rect(self.x, self.y, self.width, self.height)
+        sdl2.SDL_RenderCopy(spriteMaker.renderer, self.texture, None, dst)
 
-    def remove(self):
-        EnemyController.UFOactive = False
-        super(UFO, self).delete()
+    def getHeight(self):
+        return self.height
 
-    def shoot(self):
+    def getWidth(self):
+        return self.width
+
+    def getX(self):
+        return self.x
+
+    def getY(self):
+        return self.y
+###############################################################################
+class textMaker(GameObject):
+    renderer = None
+
+    @staticmethod
+    def setRenderer(rdr):
+        if isinstance(rdr, sdl2.ext.Renderer):
+            textMaker.renderer = rdr.renderer
+        elif isinstance(rdr, sdl2.render.SDL_Renderer):
+            textMaker.renderer = rdr
+        else:
+            raise TypeError("unsupported renderer type")
+
+    def __init__(self, text = "", xpos = 0, ypos = 0, fontSize = 24,
+                 textColor = sdl2.pixels.SDL_Color(255, 255, 255),
+                 backgroundColor = sdl2.pixels.SDL_Color(0, 0, 0), fontname = "Arial.ttf"):
+        # to make fonts work, create a folder in the same folder as this script called 'font'
+        # this font can be downloaded from: http://www.glukfonts.pl/font.php?font=Glametrix
+        #  font = os.path.join(os.path.dirname(__file__), 'font', 'Glametrix.otf')
+        # this font is just copied from your Mac in /Library/fonts/Arial.ttf to the 'font' folder
+        TTF_Init()
+
+        if fontname == "":
+            raise TTF_GetError()
+
+        font = os.path.join(os.path.dirname(__file__), 'resources/fonts', fontname)
+        self.font = TTF_OpenFont(font, fontSize)
+        if self.font is None:
+            raise TTF_GetError()
+        self._text = text
+        self.x = xpos
+        self.y = ypos
+        self.fontSize = fontSize
+        self.textColor = textColor
+        self.backgroundColor = backgroundColor
+        self.texture = self._createTexture()
+        Drawable.drawList.append(self)
+        # TODO
+        # I'm not sure if Sarah added this or if it was original code, but closing the font
+        # at the end of the init means subsequent updateTexture calls will fail. It seems more
+        # logical to keep the font open for the duration of the instance lifetime. That said,
+        # at some point we need to ensure we are cleaning up properly
+        # TTF_CloseFont(self.font)
+
+    def _createTexture(self):
+        textSurface = TTF_RenderText_Shaded(self.font, self._text, self.textColor, self.backgroundColor)
+        if textSurface is None:
+            raise TTF_GetError()
+        texture = sdl2.render.SDL_CreateTextureFromSurface(textMaker.renderer, textSurface)
+        if texture is None:
+            raise sdl2.ext.SDLError()
+        sdl2.surface.SDL_FreeSurface(textSurface)
+        return texture
+
+    def _updateTexture(self):
+        textureToDelete = self.texture
+        self.texture = self._createTexture()
+        sdl2.render.SDL_DestroyTexture(textureToDelete)
+
+    def render(self):
+        dst = sdl2.SDL_Rect(self.x, self.y)
+        w = pointer(c_int(0))
+        h = pointer(c_int(0))
+        sdl2.SDL_QueryTexture(self.texture, None, None, w, h)
+        dst.w = w.contents.value
+        dst.h = h.contents.value
+        sdl2.SDL_RenderCopy(textMaker.renderer, self.texture, None, dst)
+
+    def getText(self):
+        return self._text
+
+    def setText(self, value):
+        if self._text == value:
+            return
+        self._text = value
+        self._updateTexture()
+
+    def update(self, time):
         pass
-
-    def update(self, time):
-        self.x += lm.NDCToSC_x(UFO.vx * time, Enemy.maxwidth)
-        if UFO.vx < 0 and self.x < -UFO.width:
-            self.delete()
-            EnemyController.enemies.remove(self)
-            EnemyController.UFOactive = False
-        elif UFO.vx > 0 and self.x > Enemy.maxwidth:
-            self.delete()
-            EnemyController.enemies.remove(self)
-            EnemyController.UFOactive = False
-
-class EnemyBullet(filledRect):
-    def __init__(self, renderer, posx, posy, wwidth, wheight):
-        bulletwidth, bulletheight = lm.NDCToSC(.01, .025, wwidth, wheight)
-        super(EnemyBullet, self).__init__(renderer, int(bulletwidth), int(bulletheight))
-        self.sprite.position = posx, posy
-        EnemyBullet.height = bulletheight
-        EnemyBullet.maxheight = wheight
-        EnemyBullet.vy = .5
-
-    def delete(self):
-        super(EnemyBullet, self).delete()
-
-    def update(self, time):
-        self.sprite.y += lm.NDCToSC_y(self.vy * time, self.maxheight)
-
-    def remove(self):
-        # print "removing enemybullet"
-        self.delete()
-
-class Shield(spritedrawer.spriteMaker, Drawable):
-    def __init__(self, renderer, posx, posy, wwidth, wheight):
-        self.shieldwidth, self.shieldheight = lm.NDCToSC(.135, .08, wwidth, wheight)
-        self.shieldposx, self.shieldposy = lm.NDCToSC(posx, posy, wwidth, wheight)
-        Shield.health = 6
-        self.renderer = renderer
-        super(Shield, self).__init__(renderer, int(self.shieldposx), int(self.shieldposy), int(self.shieldwidth),
-                                     int(self.shieldheight), "shield6.png", None, False)
-
-    def hit(self):
-        self.health -= 1
-        name = "shield" + str(self.health) + ".png"
-        super(Shield, self).__init__(self.renderer, int(self.shieldposx), int(self.shieldposy), int(self.shieldwidth), int(self.shieldheight),
-                                     name, None, False)
-
-    def remove(self):
-        self.delete()
+###############################################################################

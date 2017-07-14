@@ -1,3 +1,5 @@
+import sdl2
+import sdl2.ext
 import time
 from threading import Thread
 from server import Server
@@ -7,6 +9,10 @@ from options import Options
 # -------------------------------------------------------------------------------
 def main():
     print "--begin game--"
+
+    # SDL setup
+    sdl2.ext.init()
+
     options = Options()
     server_port = 5556
     # server mode takes precedence
@@ -28,6 +34,9 @@ def main():
         time.sleep(1)
         client = Client(server_port)
         Thread(target=client.run, args='').start()
+
+    # SDL shutdown
+    sdl2.ext.quit()
 
     print "--end game--"
 

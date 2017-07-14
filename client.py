@@ -1,11 +1,7 @@
-import zmq
 import time
 import timeit as ti
 import uuid
-from threading import Thread
-from optparse import OptionParser
-import sdl2
-import sdl2.ext
+import zmq
 from helper import Proto, switch
 
 # Globals

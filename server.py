@@ -54,7 +54,7 @@ class Server():
                 id, data = self.socket.recv_multipart()
                 self.parseMsg(id, data)
 
-            game.run(running, lastDelta)
+            running = game.run(lastDelta)
 
             # Send outgoing
             for x in range(10):
@@ -69,6 +69,7 @@ class Server():
                 time.sleep(game.minFrameSecs - lastDelta)
                 stop = ti.default_timer()
                 lastDelta = stop - start
+
         game.shutdown()
 
         # Force disconnect/kill all clients

@@ -1,8 +1,9 @@
-import sdl2.ext
-import drawable as draw
-import collision
-import ui
 from options import Options
+import sdl2.ext
+import collision
+import drawable as draw
+import ui
+import scgameobjects as scgo
 
 class scgame():
     def __init__(self):
@@ -12,7 +13,6 @@ class scgame():
         self.renderer = None
         self.window = None
         self.players = list()
-        self.playersbullets = list()
         self.enemycontrol = None
         self.shields = list()
         self.lives = None
@@ -24,33 +24,28 @@ class scgame():
 
 
     # -------------------------------------------------------------------------------
-    def clear(self, renderer):
+    def clear(self):
         print "clearing"
-        renderer.color = sdl2.ext.Color(0, 0, 0, 255)
-        renderer.clear()
-        renderer.present()
+        self.renderer.color = sdl2.ext.Color(0, 0, 0, 255)
+        self.renderer.clear()
+        self.renderer.present()
 
     # -------------------------------------------------------------------------------
-    def gameover(self, renderer, player):
+    def gameover(self, player):
         # Empty the current drawlist
         draw.Drawable.clearAll()
         # Add ONLY the gameover text
-        # TODO: should also display final score!
-        gameover = ui.textMaker(renderer, "GAME OVER", self.width / 5, (self.height / 2) - 50, 40,
+        gameover = draw.textMaker("GAME OVER", self.width / 5, (self.height / 2) - 50, 40,
                                 fontname="8-BIT WONDER.TTF")
         text = "SCORE " + str(player.score)
-        print type(text)
-        score = ui.textMaker(renderer, text, self.width / 5, (self.height / 2), 30,
+        score = draw.textMaker(text, self.width / 5, (self.height / 2), 30,
                              fontname="8-BIT WONDER.TTF")
         # Signal update function to end
         self.gameIsActive = False
 
     # -------------------------------------------------------------------------------
-    def update(self, players, lives, score, bullets, enemycontrol, shields, time):
+    def update(self, time):
         # our main game loop
-
-        # read remote inputs
-        # ...
 
         # read local inputs & events
         events = sdl2.ext.get_events()
@@ -58,101 +53,95 @@ class scgame():
             if event.type == sdl2.SDL_QUIT:
                 return False
                 break
-            for player in players:
-                player.getInput(event, players.index(player))
+            for player in self.players:
+                player.getInput(event, self.players.index(player))
+
         if self.gameIsActive:
-            for player in players:
+            for player in self.players:
                 player.update(time)
-            enemycontrol.update(time)
-            for player in players:
-                if enemycontrol.checkWin(player):
-                    self.gameover(self.renderer, player)
-            for enemy in enemycontrol.enemies:
+            self.enemycontrol.update(time)
+            for player in self.players:
+                if self.enemycontrol.checkWin(player):
+                    self.gameover(player)
+            for enemy in self.enemycontrol.enemies:
                 enemy.update(time)
-            for ebullet in enemycontrol.bullets:
+            for ebullet in self.enemycontrol.bullets:
                 ebullet.update(time)
-                for shield in shields:
+                for shield in self.shields:
                     hit = collision.checkCollision(ebullet, shield)
                     if hit:
-                        ebullet.remove()
-                        enemycontrol.bullets.remove(ebullet)
+                        self.enemycontrol.removebullet(ebullet)
                         shield.hit()
                         if shield.health <= 0:
                             shield.remove()
-                            shields.remove(shield)
+                            self.shields.remove(shield)
                         break
-                for player in players:
+
+                for player in self.players:
                     hit = collision.checkCollision(ebullet, player)
                     if hit:
                         # print "enemy hit"
-                        enemycontrol.removebullet(ebullet)
+                        self.enemycontrol.removebullet(ebullet)
                         player.lostlife()
-                        lives.updateLives(player.lives)
+                        self.lives.updateLives(player.lives)
                         if player.lives <= 0:
-                            self.gameover(renderer, player)
+                            self.gameover(player)
                         break
-            for player in players:
+
+            for player in self.players:
                 for bullet in player.bullets:
                     bullet.update(time)
-                    for shield in shields:
+                    for shield in self.shields:
                         hit = collision.checkCollision(bullet, shield)
                         if hit:
-                            bullet.remove()
-                            bullets.remove(bullet)
+                            player.removebullet(bullet)
                             shield.hit()
                             if shield.health <= 0:
                                 shield.remove()
-                                shields.remove(shield)
+                                self.shields.remove(shield)
                             break
-                    for enemy in enemycontrol.enemies:
+                    for enemy in self.enemycontrol.enemies:
                         hit = collision.checkCollision(bullet, enemy)
                         if hit:
                             player.score += enemy.points
-                            score.updateScore(player.score)
+                            self.score.updateScore(player.score)
                             enemy.remove()
-                            enemycontrol.enemies.remove(enemy)
-                            bullet.remove()
-                            bullets.remove(bullet)
+                            self.enemycontrol.enemies.remove(enemy)
+                            player.removebullet(bullet)
                             break
-            if len(enemycontrol.enemies) < 1:
-                enemycontrol.reset()
-
-        # send local state to remotes
+            if len(self.enemycontrol.enemies) < 1:
+                self.enemycontrol.reset()
 
         return True
 
     # -------------------------------------------------------------------------------
-    def render(self, renderer):
+    def render(self):
         # clear to black
-        renderer.color = sdl2.ext.Color(0, 0, 0, 255)
-        renderer.clear()
+        self.renderer.color = sdl2.ext.Color(0, 0, 0, 255)
+        self.renderer.clear()
 
         # iterate the global draw list
         for di in draw.Drawable.drawList:
-            print type(di)
             di.render()
 
         # test.renderTexture(image, renderer, 0, 0)
         # present renderer results
-        renderer.present()
+        self.renderer.present()
 
     # -------------------------------------------------------------------------------
     def setup(self):
-
-        ###########################################################################
-        # SDL setup
-        ###########################################################################
-        RESOURCES = sdl2.ext.Resources(__file__, "resources")
-        sdl2.ext.init()
-
         # create window
-        width = self.options.width
-        height = self.options.height
-        self.window = sdl2.ext.Window("Space Invaders", size=(width, height))
+        self.width = self.options.width
+        self.height = self.options.height
+        self.window = sdl2.ext.Window("Space Invaders", size=(self.width, self.height))
         self.window.show()
 
-        # create a sprite renderer starting with a base sdl2ext renderer
+        # create renderer starting with a base sdl2ext renderer
         self.renderer = sdl2.ext.Renderer(self.window)
+        # set all our renderer instance types
+        draw.filledRect.setRenderer(self.renderer)
+        draw.spriteMaker.setRenderer(self.renderer)
+        draw.textMaker.setRenderer(self.renderer)
 
         ###########################################################################
 
@@ -160,27 +149,22 @@ class scgame():
         # Our game object setup
         ###########################################################################
         # create player object
-        player1 = draw.Player(self.renderer, self.width, self.height, 0.25, 1.0, 66, 28.8)
-        player2 = draw.Player(self.renderer, self.width, self.height, 0.75, 1.0, 66, 28.8)
+        player1 = scgo.Player(self.width, self.height, 0.25, 1.0, 66, 28.8)
+        player2 = scgo.Player(self.width, self.height, 0.75, 1.0, 66, 28.8)
         self.players.append(player1)
         self.players.append(player2)
-        for player in self.players:
-            bullets = player.bullets
-            self.playersbullets.append(bullets)
 
-        self.lives = ui.renderLives(self.renderer, player1.lives, 5, 5)
-        self.score = ui.renderScore(self.renderer, player1.score, self.width - (self.width / 3) - 25, 5)
+        self.lives = ui.renderLives(player1.lives, 5, 5)
+        self.score = ui.renderScore(player1.score, self.width - (self.width / 3) - 25, 5)
 
-        self.enemycontrol = draw.EnemyController(self.renderer, self.width, self.height)
+        self.enemycontrol = scgo.EnemyController(self.width, self.height)
 
         # creates shields
         x = .1
         while x <= .75:
-            shield = draw.Shield(self.renderer, x, .8, self.width, self.height)
+            shield = scgo.Shield(x, .8, self.width, self.height)
             self.shields.append(shield)
             x += .30
-
-        ###########################################################################
 
         self.limitFrame = False
         frameRateLimit = 1.0
@@ -189,21 +173,26 @@ class scgame():
             frameRateLimit = self.options.limitFrameRate
             print "--frame rate limit(%d)--" % frameRateLimit
         self.minFrameSecs = 1.0 / frameRateLimit
-        if self.options.debug:
-            self.fpsCounter = ui.textMaker(self.renderer, "FPS: 0", width - 55, height - 14, 12,
-                                      fontname="Arial.ttf")
 
-    def run(self, running, lastDelta):
-        #######################################################################
-        if self.gameIsActive:
-            running = self.update(self.players, self.lives, self.score, self.playersbullets, self.enemycontrol, self.shields, lastDelta)
         if self.options.debug:
+            self.fpsCounter = draw.textMaker("FPS: 0", self.width - 55,
+                                           self.height - 14, 12, fontname="Arial.ttf")
+
+    def run(self, lastDelta):
+        running = True
+        # Update only if active
+        if self.gameIsActive:
+            running = self.update(lastDelta)
+
+        # Setup framerate if enabled
+        if self.options.debug and lastDelta > 0.0:
             self.fpsCounter.setText("FPS: " + str(int(1.0 / lastDelta)))
+
         # Always render
-        self.render(self.renderer)
-        #######################################################################
+        self.render()
+
+        return running
 
     def shutdown(self):
-        # cleanup
-        sdl2.ext.quit()
-
+        # add anything needed for cleanup here
+        pass
