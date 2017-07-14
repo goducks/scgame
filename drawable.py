@@ -139,18 +139,30 @@ class Player(spritedrawer.spriteMaker, Drawable):
                                        self.y, self.maxwidth, self.maxheight))
             sdlmixer.Mix_PlayChannel(-1, self.shootsound, 0)
 
-    def getInput(self, event):
+    def getInput(self, event, number):
         if sdl2.SDL_HasScreenKeyboardSupport:
-            if event.type == sdl2.SDL_KEYDOWN:
-                if event.key.keysym.sym == sdl2.SDLK_LEFT:
-                    self.vx = -.75
-                if event.key.keysym.sym == sdl2.SDLK_RIGHT:
-                    self.vx = .75
-                if event.key.keysym.sym == sdl2.SDLK_SPACE:
-                    self.fire()
-            elif event.type == sdl2.SDL_KEYUP:
-                if event.key.keysym.sym in (sdl2.SDLK_LEFT, sdl2.SDLK_RIGHT):
-                    self.vx = 0
+            if number == 0:
+                if event.type == sdl2.SDL_KEYDOWN:
+                    if event.key.keysym.sym == sdl2.SDLK_LEFT:
+                        self.vx = -.75
+                    if event.key.keysym.sym == sdl2.SDLK_RIGHT:
+                        self.vx = .75
+                    if event.key.keysym.sym == sdl2.SDLK_SPACE:
+                        self.fire()
+                elif event.type == sdl2.SDL_KEYUP:
+                    if event.key.keysym.sym in (sdl2.SDLK_LEFT, sdl2.SDLK_RIGHT):
+                        self.vx = 0
+            if number == 1:
+                if event.type == sdl2.SDL_KEYDOWN:
+                    if event.key.keysym.sym == sdl2.SDLK_a:
+                        self.vx = -.75
+                    if event.key.keysym.sym == sdl2.SDLK_d:
+                        self.vx = .75
+                    if event.key.keysym.sym == sdl2.SDLK_w:
+                        self.fire()
+                elif event.type == sdl2.SDL_KEYUP:
+                    if event.key.keysym.sym in (sdl2.SDLK_a, sdl2.SDLK_d):
+                        self.vx = 0
 
     def lostlife(self):
         sdlmixer.Mix_PlayChannel(-1, self.hitsound, 0)
