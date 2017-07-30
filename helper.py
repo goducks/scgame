@@ -28,3 +28,5 @@ class Proto():
     str         =     b'0x0002'
     serverstop  =     b'0x000A'
     clientstop  =     b'0x000B'
+    clientmove  =     b'0x000C'
+    clientfire  =     b'0x000D'

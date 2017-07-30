@@ -20,12 +20,12 @@ def main():
         print "--server only mode--"
         # start the server
         server = Server(server_port)
-        server.run(options.opts.runtime)
+        server.serverrun(options.opts.runtime)
     elif (options.opts.client):
         print "--client only mode--"
         # start the client
         client = Client(server_port)
-        client.run()
+        client.clientrun()
     else:
         print "--client and server mode--"
         # start server

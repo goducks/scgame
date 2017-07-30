@@ -1,11 +1,12 @@
 from options import Options
 import sdl2.ext
-import collision
 import drawable as draw
+import collision
 import ui
 import scgameobjects as scgo
 
-class scgame():
+
+class scgame(object):
     def __init__(self):
         self.gameIsActive = True
         self.width = 0
@@ -21,7 +22,14 @@ class scgame():
         self.limitFrame = None
         self.options = Options().opts
         self.minFrameSecs = None
+        self.lastDelta = 0
+        self.move = False
 
+    def addPlayer(self, id):
+        player = scgo.Player(self.width, self.height, id, 0.5, 1.0, 66, 28.8)
+        self.players.append(player)
+        self.lives.updateLives(player.lives)
+        self.score.updateScore(player.score)
 
     # -------------------------------------------------------------------------------
     def clear(self):
@@ -55,8 +63,8 @@ class scgame():
                 break
             for player in self.players:
                 player.getInput(event, self.players.index(player))
-
         if self.gameIsActive:
+
             for player in self.players:
                 player.update(time)
             self.enemycontrol.update(time)
@@ -65,6 +73,7 @@ class scgame():
                     self.gameover(player)
             for enemy in self.enemycontrol.enemies:
                 enemy.update(time)
+
             for ebullet in self.enemycontrol.bullets:
                 ebullet.update(time)
                 for shield in self.shields:
@@ -76,7 +85,6 @@ class scgame():
                             shield.remove()
                             self.shields.remove(shield)
                         break
-
                 for player in self.players:
                     hit = collision.checkCollision(ebullet, player)
                     if hit:
@@ -149,13 +157,13 @@ class scgame():
         # Our game object setup
         ###########################################################################
         # create player object
-        player1 = scgo.Player(self.width, self.height, 0.25, 1.0, 66, 28.8)
-        player2 = scgo.Player(self.width, self.height, 0.75, 1.0, 66, 28.8)
-        self.players.append(player1)
-        self.players.append(player2)
+        player = scgo.Player(self.width, self.height, 0, 0.5, 1.0, 66, 28.8)
+        self.players.append(player)
 
-        self.lives = ui.renderLives(player1.lives, 5, 5)
-        self.score = ui.renderScore(player1.score, self.width - (self.width / 3) - 25, 5)
+        self.lives = ui.renderLives(player.lives, 5, 5)
+        self.score = ui.renderScore(player.score, self.width - (self.width / 3) - 25, 5)
+        # self.lives = ui.renderLives(0, 5, 5)
+        # self.score = ui.renderScore(0, self.width - (self.width / 3) - 25, 5)
 
         self.enemycontrol = scgo.EnemyController(self.width, self.height)
 
@@ -175,18 +183,18 @@ class scgame():
         self.minFrameSecs = 1.0 / frameRateLimit
 
         if self.options.debug:
-            self.fpsCounter = draw.textMaker("FPS: 0", self.width - 55,
-                                           self.height - 14, 12, fontname="Arial.ttf")
+            self.fpsCounter = draw.textMaker("FPS: 0", self.width - 55, self.height - 14, 12,
+                                      fontname="Arial.ttf")
 
-    def run(self, lastDelta):
+    def run(self):
         running = True
         # Update only if active
         if self.gameIsActive:
-            running = self.update(lastDelta)
+            running = self.update(self.lastDelta)
 
         # Setup framerate if enabled
-        if self.options.debug and lastDelta > 0.0:
-            self.fpsCounter.setText("FPS: " + str(int(1.0 / lastDelta)))
+        if self.options.debug and self.lastDelta > 0.0:
+            self.fpsCounter.setText("FPS: " + str(int(1.0 / self.lastDelta)))
 
         # Always render
         self.render()
@@ -194,5 +202,4 @@ class scgame():
         return running
 
     def shutdown(self):
-        # add anything needed for cleanup here
         pass

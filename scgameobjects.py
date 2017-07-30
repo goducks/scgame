@@ -8,7 +8,7 @@ import scgame
 
 class Player(draw.spriteMaker):
 
-    def __init__(self, wwidth, wheight, posx=0.0, posy=0.0, width=0.0, height=0.0):
+    def __init__(self, wwidth, wheight, id, posx=0.0, posy=0.0, width=0.0, height=0.0):
         playerwidth, playerheight = lm.SC(width, height)
         playerposx, playerposy = lm.NDCToSC(posx, posy, wwidth, wheight)
         playerposx -= playerheight + playerheight / 2
@@ -19,50 +19,48 @@ class Player(draw.spriteMaker):
         Player.height = playerheight
         Player.maxwidth = wwidth
         Player.maxheight = wheight
-        Player.bulletcount = 5
+        self.bulletcount = 0
         path = os.path.join(os.path.dirname(__file__), 'resources/sounds', 'shoot.wav')
         Player.shootsound = sdlmixer.Mix_LoadWAV(path)
         path = os.path.join(os.path.dirname(__file__), 'resources/sounds', 'explosion.wav')
         Player.hitsound = sdlmixer.Mix_LoadWAV(path)
         self.vx = 0
+        self.id = id
         self.bullets = list()
         self.lives = 3
         self.score = 0
+        # states set by messages
+        self.move = False
+        self.shoot = False
 
     def fire(self):
         for bullet in self.bullets:
             if bullet.y < -16:
                 self.bullets.remove(bullet)
         if self.bulletcount >= .5:
-            self.bulletcount = 0
             self.bullets.append(Bullet(int(self.x + self.width / 2),
                                        self.y, self.maxwidth, self.maxheight))
             sdlmixer.Mix_PlayChannel(-1, self.shootsound, 0)
+            self.bulletcount = 0
 
     def getInput(self, event, number):
         if sdl2.SDL_HasScreenKeyboardSupport:
-            if number == 0:
-                if event.type == sdl2.SDL_KEYDOWN:
-                    if event.key.keysym.sym == sdl2.SDLK_LEFT:
-                        self.vx = -.75
-                    if event.key.keysym.sym == sdl2.SDLK_RIGHT:
-                        self.vx = .75
-                    if event.key.keysym.sym == sdl2.SDLK_SPACE:
-                        self.fire()
-                elif event.type == sdl2.SDL_KEYUP:
-                    if event.key.keysym.sym in (sdl2.SDLK_LEFT, sdl2.SDLK_RIGHT):
-                        self.vx = 0
-            if number == 1:
-                if event.type == sdl2.SDL_KEYDOWN:
-                    if event.key.keysym.sym == sdl2.SDLK_a:
-                        self.vx = -.75
-                    if event.key.keysym.sym == sdl2.SDLK_d:
-                        self.vx = .75
-                    if event.key.keysym.sym == sdl2.SDLK_w:
-                        self.fire()
-                elif event.type == sdl2.SDL_KEYUP:
-                    if event.key.keysym.sym in (sdl2.SDLK_a, sdl2.SDLK_d):
-                        self.vx = 0
+            oldvx = self.vx
+            if event.type == sdl2.SDL_KEYDOWN:
+                if event.key.keysym.sym == sdl2.SDLK_LEFT:
+                    self.vx = -.75
+                if event.key.keysym.sym == sdl2.SDLK_RIGHT:
+                    self.vx = .75
+                if event.key.keysym.sym == sdl2.SDLK_SPACE:
+                    self.shoot = True
+                    self.fire()
+            elif event.type == sdl2.SDL_KEYUP:
+                if event.key.keysym.sym in (sdl2.SDLK_LEFT, sdl2.SDLK_RIGHT):
+                    self.vx = 0
+            if oldvx != self.vx:
+                self.move = True
+            else:
+                self.move = False
 
     def lostlife(self):
         sdlmixer.Mix_PlayChannel(-1, self.hitsound, 0)
