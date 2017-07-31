@@ -10,7 +10,7 @@ import drawable as draw
 import scgameobjects as scgo
 
 # Globals
-g_zmqhwm = 100
+g_zmqhwm = 1024
 
 class Server(scgame.scgame):
     # To track clients, use dictionary of connections where:

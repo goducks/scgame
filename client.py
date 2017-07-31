@@ -6,20 +6,21 @@ from helper import Proto, switch
 import scgame
 
 # Globals
-g_zmqhwm = 100
+g_zmqhwm = 1024
 
 class Client(scgame.scgame):
     # client registration string
 
-    def __init__(self, server_port):
+    def __init__(self, ipaddr, server_port):
         context = zmq.Context().instance()
         self.socket = context.socket(zmq.DEALER)
-        # generate a universally unique client ID
-        self.id = uuid.uuid4()
+        # generate a universally unique client ID -- slicing last 12
+        # characters of the UUID4 just to keep it shorter
+        self.id = str(uuid.uuid4())[-12:]
         self.socket.setsockopt(zmq.IDENTITY, str(self.id))
         self.socket.setsockopt(zmq.SNDHWM, g_zmqhwm)
         self.socket.setsockopt(zmq.RCVHWM, g_zmqhwm)
-        self.socket.connect("tcp://localhost:%s" % server_port)
+        self.socket.connect("tcp://%s:%s" % (ipaddr, server_port))
         # set up a read poller
         self.poller = zmq.Poller()
         self.poller.register(self.socket, zmq.POLLIN)
@@ -32,7 +33,7 @@ class Client(scgame.scgame):
         msg = self.socket.recv()
         self.parseMsg(msg)
 
-        print "Client: " + str(self.id) + " connected to port: " + str(server_port)
+        print "Client: " + str(self.id) + " connected to: " + ipaddr + str(server_port)
 
     def clientrun(self):
         print "Client: start run"

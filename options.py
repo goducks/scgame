@@ -21,5 +21,9 @@ class Options():
                           default=False, help="enable client-only run mode")
         parser.add_option("-r", "--run", type="int", dest="runtime", default=10,
                           help="set run time [10]")
+        parser.add_option("-p", "--port", type="int", dest="server_port", default="5556",
+                          help="set server port [5556]")
+        parser.add_option("-i", "--ipaddr", type="string", dest="ipaddr", default="localhost",
+                          help="set server IP [localhost]")
         (options, args) = parser.parse_args()
         self.opts = options
