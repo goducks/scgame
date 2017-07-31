@@ -115,7 +115,8 @@ class spriteMaker(Drawable):
         else:
             raise TypeError("unsupported renderer type")
 
-    def __init__(self, x, y, w, h, imagename, dupetexture, useimagesize=False):
+    def __init__(self, x, y, w, h, imagename, dupetexture, useimagesize=False,
+                 colormod=sdl2.ext.Color(255, 255, 255, 255)):
         if imagename == '' and dupetexture is None:
             raise sdl2.ext.SDLError()
 
@@ -126,6 +127,7 @@ class spriteMaker(Drawable):
             self.texture = self._createTexture(fullpath)
         if self.texture is None:
             raise sdl2.ext.SDLError()
+        sdl2.SDL_SetTextureColorMod(self.texture, colormod.r, colormod.g, colormod.b)
 
         self.x = x
         self.y = y

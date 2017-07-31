@@ -13,8 +13,9 @@ class Player(draw.spriteMaker):
         playerposx, playerposy = lm.NDCToSC(posx, posy, wwidth, wheight)
         playerposx -= playerheight + playerheight / 2
         playerposy -= playerheight + 10
+        self.colormod = sdl2.ext.Color(randint(0, 255), randint(0, 255), randint(0, 255), 255)
         super(Player, self).__init__(int(playerposx), int(playerposy), int(playerwidth), int(playerheight),
-                                     "ship.png", None, False)
+                                     "ship.png", None, False, self.colormod)
         Player.width = playerwidth
         Player.height = playerheight
         Player.maxwidth = wwidth
