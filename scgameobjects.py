@@ -47,6 +47,7 @@ class Player(draw.spriteMaker):
 
     def getInput(self, event, number):
         if sdl2.SDL_HasScreenKeyboardSupport:
+            self.move = False
             oldvx = self.vx
             if event.type == sdl2.SDL_KEYDOWN:
                 if event.key.keysym.sym == sdl2.SDLK_LEFT:

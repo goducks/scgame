@@ -113,7 +113,6 @@ class Server(scgame.scgame):
             if case(Proto.greet):
                 print body
                 colorsplit = body.split(":")
-                print colorsplit
                 color = sdl2.ext.Color(int(colorsplit[0]), int(colorsplit[1]), int(colorsplit[2]), 255)
                 self.addClient(id, color)
                 break

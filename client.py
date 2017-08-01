@@ -47,8 +47,6 @@ class Client(scgame.scgame):
         self.lastDelta = 0.0
         quitLimit = 2.0
         quitTimer = 0.0
-        super(Client, self).__init__()
-        self.setup()
         while True:
             start = ti.default_timer()
 
@@ -72,6 +70,7 @@ class Client(scgame.scgame):
                 for player in self.players:
                     if player.move:
                         movevx = str(player.vx)
+                        player.move = False
                         # print "Sending move message"
                         self.send(Proto.clientmove, movevx)
                     if player.shoot:
