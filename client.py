@@ -25,10 +25,13 @@ class Client(scgame.scgame):
         self.poller = zmq.Poller()
         self.poller.register(self.socket, zmq.POLLIN)
         self.svr_connect = False
-
+        super(Client, self).__init__()
+        self.setup()
+        color = self.players[0].colormod
+        colorstr = "%s:%s:%s" % (color.r, color.g, color.b)
         # send connection message that will register server with client
         print "Connecting to server..."
-        self.send(Proto.greet)
+        self.send(Proto.greet, colorstr)
         # blocking read
         msg = self.socket.recv()
         self.parseMsg(msg)
@@ -62,18 +65,17 @@ class Client(scgame.scgame):
                 if not self.parseMsg(msg):
                     break
 
-            running = super(Client, self).run()
+            super(Client, self).run()
 
             if self.svr_connect:
                 # will only have one local player, specify if player is local w/variable
                 for player in self.players:
-                    print player.shoot
                     if player.move:
                         movevx = str(player.vx)
-                        print "Sending move message"
+                        # print "Sending move message"
                         self.send(Proto.clientmove, movevx)
                     if player.shoot:
-                        print "Sending fire message"
+                        # print "Sending fire message"
                         self.send(Proto.clientfire)
                         player.shoot = False
                 # Send outgoing
@@ -96,8 +98,8 @@ class Client(scgame.scgame):
 
     def send(self, proto, data = b''):
         try:
-            if proto != Proto.str:
-                print "Proto: " + proto + " data: " + data
+            # if proto != Proto.str:
+                # print "Proto: " + proto + " data: " + data
             if not self.socket.send(proto + data, zmq.NOBLOCK) == None:
                 print "Client: socket send failed"
         except zmq.ZMQError:

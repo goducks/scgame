@@ -100,8 +100,8 @@ class Server(scgame.scgame):
     def parseMsg(self, id, msg):
         header = msg[0:Proto.headerlen]
         body = msg[Proto.headerlen:]
-        if header != Proto.str:
-            print "Proto: " + header + " data: " + body
+        # if header != Proto.str:
+            # print "Proto: " + header + " data: " + body
 
         # Check if client is registered -- this is messy
         if not id in self.clientmap and not header == Proto.greet:
@@ -111,7 +111,11 @@ class Server(scgame.scgame):
 
         for case in switch(header):
             if case(Proto.greet):
-                self.addClient(id, body)
+                print body
+                colorsplit = body.split(":")
+                print colorsplit
+                color = sdl2.ext.Color(int(colorsplit[0]), int(colorsplit[1]), int(colorsplit[2]), 255)
+                self.addClient(id, color)
                 break
             if case(Proto.str):
                 # print "Server: string: (" + id + ") " + body
@@ -142,9 +146,9 @@ class Server(scgame.scgame):
         else:
             print "Server: registering new client"
             global game
-            self.addPlayer(id)
+            self.addPlayer(id, body)
             self.clientmap[id] = {'imc': 0, 'ibr': 0, 'omc': 0, 'obs': 0, 'vx': 0,
-                                  'fire': False}
+                                  'fire': False, 'color': None}
             # reply with ack
             self.send(id, Proto.greet)
             print self.clientmap
@@ -185,7 +189,7 @@ class Server(scgame.scgame):
         if self.gameIsActive:
             for player in self.players:
                 # associate velocity with id in dictionary
-                print self.clientmap[player.id]['vx']
+                # print self.clientmap[player.id]['vx']
                 player.vx = self.clientmap[player.id]['vx']
                 if self.clientmap[player.id]['fire']:
                     player.fire()

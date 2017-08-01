@@ -8,12 +8,13 @@ import scgame
 
 class Player(draw.spriteMaker):
 
-    def __init__(self, wwidth, wheight, id, posx=0.0, posy=0.0, width=0.0, height=0.0):
+    def __init__(self, wwidth, wheight, id, posx=0.0, posy=0.0, width=0.0, height=0.0,
+                 color=sdl2.ext.Color(randint(0, 255), randint(0, 255), randint(0, 255), 255)):
         playerwidth, playerheight = lm.SC(width, height)
         playerposx, playerposy = lm.NDCToSC(posx, posy, wwidth, wheight)
         playerposx -= playerheight + playerheight / 2
         playerposy -= playerheight + 10
-        self.colormod = sdl2.ext.Color(randint(0, 255), randint(0, 255), randint(0, 255), 255)
+        self.colormod = color
         super(Player, self).__init__(int(playerposx), int(playerposy), int(playerwidth), int(playerheight),
                                      "ship.png", None, False, self.colormod)
         Player.width = playerwidth

@@ -25,8 +25,8 @@ class scgame(object):
         self.lastDelta = 0
         self.move = False
 
-    def addPlayer(self, id):
-        player = scgo.Player(self.width, self.height, id, 0.5, 1.0, 66, 28.8)
+    def addPlayer(self, id, color):
+        player = scgo.Player(self.width, self.height, id, 0.5, 1.0, 66, 28.8, color)
         self.players.append(player)
         self.lives.updateLives(player.lives)
         self.score.updateScore(player.score)
