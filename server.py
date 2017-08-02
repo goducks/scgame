@@ -111,7 +111,6 @@ class Server(scgame.scgame):
 
         for case in switch(header):
             if case(Proto.greet):
-                print body
                 colorsplit = body.split(":")
                 color = sdl2.ext.Color(int(colorsplit[0]), int(colorsplit[1]), int(colorsplit[2]), 255)
                 self.addClient(id, color)
@@ -144,12 +143,19 @@ class Server(scgame.scgame):
             # TODO: debug
         else:
             print "Server: registering new client"
-            global game
+            # save color in string format (body is sdl color format)
+            colorstr = "%s:%s:%s" % (body.r, body.g, body.b)
             self.addPlayer(id, body)
             self.clientmap[id] = {'imc': 0, 'ibr': 0, 'omc': 0, 'obs': 0, 'vx': 0,
-                                  'fire': False, 'color': None}
+                                  'fire': False, 'color': colorstr}
             # reply with ack
             self.send(id, Proto.greet)
+            # add player to other clients
+            color = self.clientmap[id]['color']
+            for otherid in self.clientmap.iterkeys():
+                if otherid != id:
+                    print color
+                    self.send(otherid, Proto.addtoclient, color)
             print self.clientmap
 
     def removeClient(self, id, body):
