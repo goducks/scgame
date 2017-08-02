@@ -4,6 +4,8 @@ import uuid
 import zmq
 from helper import Proto, switch
 import scgame
+import sdl2.ext
+import sdl2
 
 # Globals
 g_zmqhwm = 1024
@@ -123,6 +125,13 @@ class Client(scgame.scgame):
                 self.svr_connect = False
                 self.send(Proto.clientstop)
                 ret = False
+                break
+            if case(Proto.addtoclient):
+                print "got here"
+                colorsplit = body.split(":")
+                color = sdl2.ext.Color(int(colorsplit[0]), int(colorsplit[1]), int(colorsplit[2]), 255)
+                self.addPlayer(1, color)
+                print len(self.players)
                 break
             if case():  # default
                 print "Client: received undefined message!"
