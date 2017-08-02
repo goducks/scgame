@@ -30,3 +30,4 @@ class Proto():
     clientstop  =     b'0x000B'
     clientmove  =     b'0x000C'
     clientfire  =     b'0x000D'
+    addtoclient =     b'0x000E'
