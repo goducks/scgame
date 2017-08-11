@@ -26,6 +26,7 @@ class scgame(object):
         self.move = False
 
     def addPlayer(self, id, color):
+        print "adding player"
         player = scgo.Player(self.width, self.height, id, 0.5, 1.0, 66, 28.8, color)
         self.players.append(player)
         self.lives.updateLives(player.lives)
@@ -66,6 +67,7 @@ class scgame(object):
         if self.gameIsActive:
 
             for player in self.players:
+                # print "player " + str(player.id) + " at " + str(player.x)
                 player.update(time)
             self.enemycontrol.update(time)
             for player in self.players:
@@ -141,7 +143,12 @@ class scgame(object):
         # create window
         self.width = self.options.width
         self.height = self.options.height
-        self.window = sdl2.ext.Window("Space Invaders", size=(self.width, self.height))
+        windowtitle = "Space Invaders"
+        if self.options.server:
+            windowtitle += " - Server"
+        else:
+            windowtitle += " - Client"
+        self.window = sdl2.ext.Window(windowtitle, size=(self.width, self.height))
         self.window.show()
 
         # create renderer starting with a base sdl2ext renderer
