@@ -38,7 +38,7 @@ class Client(scgame.scgame):
         msg = self.socket.recv()
         self.parseMsg(msg)
 
-        print "Client: " + str(self.id) + " connected to: " + ipaddr + str(server_port)
+        print "Client: " + str(self.id) + " connected to: " + ipaddr + ":" + str(server_port)
 
     def clientrun(self):
         print "Client: start run"
@@ -127,11 +127,12 @@ class Client(scgame.scgame):
                 ret = False
                 break
             if case(Proto.addtoclient):
-                print "got here"
-                colorsplit = body.split(":")
-                color = sdl2.ext.Color(int(colorsplit[0]), int(colorsplit[1]), int(colorsplit[2]), 255)
+                split = body.split(":")
+                otherid = split[0]
+                print "got addtoclient for " + otherid
+                color = sdl2.ext.Color(int(split[1]), int(split[2]), int(split[3]), 255)
                 self.addPlayer(1, color)
-                print len(self.players)
+                print "number of players %d" % len(self.players)
                 break
             if case():  # default
                 print "Client: received undefined message!"

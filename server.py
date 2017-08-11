@@ -142,7 +142,7 @@ class Server(scgame.scgame):
             print "Server: recv'd duplicate client reg"
             # TODO: debug
         else:
-            print "Server: registering new client"
+            print "Server: registering new client: " + id
             # save color in string format (body is sdl color format)
             colorstr = "%s:%s:%s" % (body.r, body.g, body.b)
             self.addPlayer(id, body)
@@ -151,11 +151,12 @@ class Server(scgame.scgame):
             # reply with ack
             self.send(id, Proto.greet)
             # add player to other clients
-            color = self.clientmap[id]['color']
             for otherid in self.clientmap.iterkeys():
                 if otherid != id:
-                    print color
-                    self.send(otherid, Proto.addtoclient, color)
+                    color = self.clientmap[otherid]['color']
+                    print "added " + id + " to " + otherid
+                    body = "%s:%s" % (id, color)
+                    self.send(otherid, Proto.addtoclient, body)
             print self.clientmap
 
     def removeClient(self, id, body):
@@ -259,7 +260,7 @@ class Server(scgame.scgame):
         # create window
         self.width = self.options.width
         self.height = self.options.height
-        self.window = sdl2.ext.Window("Space Invaders", size=(self.width, self.height))
+        self.window = sdl2.ext.Window("Space Invaders - Server", size=(self.width, self.height))
         self.window.show()
 
         # create renderer starting with a base sdl2ext renderer
