@@ -46,6 +46,8 @@ class Server(scgame.scgame):
         self.lastDelta = 0.0
         quitLimit = 2.0
         quitTimer = 0.0
+        pingLimit = 5.0
+        pingTimer = 0.0
         super(Server, self).__init__()
         self.setup()
         while running:
@@ -64,11 +66,12 @@ class Server(scgame.scgame):
 
             running = self.run()
 
-            # Send outgoing
-            for x in range(10):
+            # Send ping outgoing to all clients every X seconds
+            pingTimer += self.lastDelta
+            if (pingTimer >= pingLimit):
                 for id in self.clientmap.iterkeys():
-                    work = b"workload" + str(x)
-                    self.send(id, Proto.str, work)
+                    self.send(id, Proto.ping)
+                pingTimer = 0.0
 
             stop = ti.default_timer()
             self.lastDelta = stop - start
@@ -116,7 +119,10 @@ class Server(scgame.scgame):
                 self.addClient(id, color)
                 break
             if case(Proto.str):
-                # print "Server: string: (" + id + ") " + body
+                print "Server: client string: (" + id + ") " + body
+                break
+            if case(Proto.ping):
+                print "Server: client ping: (" + id + ")"
                 break
             if case(Proto.clientstop):
                 self.removeClient(id, body)
@@ -146,17 +152,24 @@ class Server(scgame.scgame):
             # save color in string format (body is sdl color format)
             colorstr = "%s:%s:%s" % (body.r, body.g, body.b)
             self.addPlayer(id, body)
+            # add to clientmap
             self.clientmap[id] = {'imc': 0, 'ibr': 0, 'omc': 0, 'obs': 0, 'vx': 0,
                                   'fire': False, 'color': colorstr}
             # reply with ack
             self.send(id, Proto.greet)
-            # add player to other clients
+
+            # add new player to other clients, and other clients to new
             for otherid in self.clientmap.iterkeys():
-                if otherid != id:
-                    color = self.clientmap[otherid]['color']
-                    print "added " + id + " to " + otherid
-                    body = "%s:%s" % (id, color)
+                if (otherid != id):
+                    othercolor = self.clientmap[otherid]['color']
+                    body = "%s:%s" % (id, othercolor)
+                    print "added new client: " + id + " to " + otherid + " body: " + body
+                    # first add new to other
                     self.send(otherid, Proto.addtoclient, body)
+                    # now add other to new
+                    body = "%s:%s" % (otherid, colorstr)
+                    self.send(id, Proto.addtoclient, body)
+
             print self.clientmap
 
     def removeClient(self, id, body):

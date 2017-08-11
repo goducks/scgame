@@ -45,10 +45,11 @@ class Client(scgame.scgame):
 
         # Client's idle loop
         timeout = 1
-        total = 0
         self.lastDelta = 0.0
         quitLimit = 2.0
         quitTimer = 0.0
+        pingLimit = 5.0
+        pingTimer = 0.0
 
         while True:
             start = ti.default_timer()
@@ -62,7 +63,6 @@ class Client(scgame.scgame):
             sockets = dict(self.poller.poll(timeout))
             if self.socket in sockets and sockets[self.socket] == zmq.POLLIN:
                 msg = self.socket.recv()
-                total += 1
                 if not self.parseMsg(msg):
                     break
 
@@ -79,9 +79,12 @@ class Client(scgame.scgame):
                         # print "Sending fire message"
                         self.send(Proto.clientfire)
                         player.shoot = False
-                # Send outgoing
-                # work = b"workload" + str(total)
-                # self.send(Proto.str, work)
+
+            # Send ping to server every X seconds
+            pingTimer += self.lastDelta
+            if (pingTimer >= pingLimit):
+                self.send(Proto.ping)
+                pingTimer = 0.0
 
             stop = ti.default_timer()
             self.lastDelta = stop - start
@@ -93,7 +96,6 @@ class Client(scgame.scgame):
 
         self.shutdown()
 
-        print("Client: total messages received: %s" % total)
         print "Client: end run"
         self.socket.close()
 
@@ -117,7 +119,10 @@ class Client(scgame.scgame):
                 self.svr_connect = True
                 break
             if case(Proto.str):
-                # print "Client: string: " + body
+                print "Client: string: " + body
+                break
+            if case(Proto.ping):
+                print "Client: server ping"
                 break
             if case(Proto.serverstop):
                 print "Client: serverstop"

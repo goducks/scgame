@@ -26,6 +26,7 @@ class Proto():
     headerlen   = 6
     greet       =     b'0x0001'
     str         =     b'0x0002'
+    ping        =     b'0x0003'
     serverstop  =     b'0x000A'
     clientstop  =     b'0x000B'
     clientmove  =     b'0x000C'
