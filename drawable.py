@@ -25,8 +25,7 @@ class Drawable(GameObject):
         print "Mix_OpenAudio: %s\n", sdlmixer.Mix_GetError()
         exit(2);
 
-    def __init__(self, width, height, x = 0, y = 0, filename = ""):
-        self.filename = filename
+    def __init__(self, width, height, x = 0, y = 0):
         self.height = height
         self.width = width
         self.x = x
@@ -71,14 +70,13 @@ class filledRect(Drawable):
         else:
             raise TypeError("unsupported renderer type")
 
-    def __init__(self, width, height, x = 0, y = 0, filename = ""):
-        self.filename = filename
+    def __init__(self, width, height, x = 0, y = 0,
+                 color = sdl2.ext.Color(randint(0, 255), randint(0, 255), randint(0, 255), 255)):
         self.height = height
         self.width = width
         self.x = x
         self.y = y
-        # set a random color
-        self.color = sdl2.ext.Color(randint(0, 255), randint(0, 255), randint(0, 255), 255)
+        self.color = color
         # add to global drawList
         Drawable.drawList.append(self)
 
@@ -183,8 +181,8 @@ class textMaker(GameObject):
             raise TypeError("unsupported renderer type")
 
     def __init__(self, text = "", xpos = 0, ypos = 0, fontSize = 24,
-                 textColor = sdl2.pixels.SDL_Color(255, 255, 255),
-                 backgroundColor = sdl2.pixels.SDL_Color(0, 0, 0), fontname = "Arial.ttf"):
+                 textColor = sdl2.ext.Color(255, 255, 255),
+                 bgColor = sdl2.ext.Color(0, 0, 0), fontname = "Arial.ttf"):
         # to make fonts work, create a folder in the same folder as this script called 'font'
         # this font can be downloaded from: http://www.glukfonts.pl/font.php?font=Glametrix
         #  font = os.path.join(os.path.dirname(__file__), 'font', 'Glametrix.otf')
@@ -202,8 +200,8 @@ class textMaker(GameObject):
         self.x = xpos
         self.y = ypos
         self.fontSize = fontSize
-        self.textColor = textColor
-        self.backgroundColor = backgroundColor
+        self.textColor = sdl2.pixels.SDL_Color(textColor.r, textColor.g, textColor.b, textColor.a)
+        self.backgroundColor = sdl2.pixels.SDL_Color(bgColor.r, bgColor.g, bgColor.b, bgColor.a)
         self.texture = self._createTexture()
         Drawable.drawList.append(self)
         # TODO

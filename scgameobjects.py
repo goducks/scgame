@@ -41,7 +41,7 @@ class Player(draw.spriteMaker):
                 self.bullets.remove(bullet)
         if self.bulletcount >= .5:
             self.bullets.append(Bullet(int(self.x + self.width / 2),
-                                       self.y, self.maxwidth, self.maxheight))
+                                       self.y, self.maxwidth, self.maxheight, self.colormod))
             sdlmixer.Mix_PlayChannel(-1, self.shootsound, 0)
             self.bulletcount = 0
 
@@ -62,8 +62,6 @@ class Player(draw.spriteMaker):
                     self.vx = 0
             if oldvx != self.vx:
                 self.move = True
-            else:
-                self.move = False
 
     def lostlife(self):
         sdlmixer.Mix_PlayChannel(-1, self.hitsound, 0)
@@ -88,9 +86,9 @@ class Player(draw.spriteMaker):
         self.bullets.remove(bullet)
 
 class Bullet(draw.filledRect):
-    def __init__(self, posx, posy, wwidth, wheight):
+    def __init__(self, posx, posy, wwidth, wheight, color):
         bulletwidth, bulletheight = lm.NDCToSC(.01, .025, wwidth, wheight)
-        super(Bullet, self).__init__(int(bulletwidth), int(bulletheight))
+        super(Bullet, self).__init__(int(bulletwidth), int(bulletheight), color=color)
         self.x = posx
         self.y = posy
         Bullet.maxheight = wheight
@@ -314,7 +312,8 @@ class UFO(draw.spriteMaker):
 class EnemyBullet(draw.filledRect):
     def __init__(self, posx, posy, wwidth, wheight):
         bulletwidth, bulletheight = lm.NDCToSC(.01, .025, wwidth, wheight)
-        super(EnemyBullet, self).__init__(int(bulletwidth), int(bulletheight))
+        super(EnemyBullet, self).__init__(int(bulletwidth), int(bulletheight),
+                                          color=sdl2.ext.Color(255, 255, 255, 255))
         self.x = posx
         self.y = posy
         EnemyBullet.height = bulletheight

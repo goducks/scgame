@@ -87,6 +87,7 @@ class Client(scgame.scgame):
                             movevx = str(player.vx)
                             # print "Sending move message"
                             self.send(Proto.clientmove, movevx)
+                            player.move = False
                         if player.shoot:
                             # print "Sending fire message"
                             self.send(Proto.clientfire)
@@ -305,9 +306,10 @@ class Client(scgame.scgame):
         self.players.append(player)
 
         self.lives = list()
-        self.lives.append(ui.renderLives(player.lives, 5, 5))
+        self.lives.append(ui.renderLives(player.lives, 5, 5, color=self.players[0].colormod))
         self.score = list()
-        self.score.append(ui.renderScore(player.score, self.width - (self.width / 3) - 25, 5))
+        self.score.append(ui.renderScore(player.score, self.width - (self.width / 3) - 25, 5,
+                          color=self.players[0].colormod))
 
         self.enemycontrol = scgo.EnemyController(self.width, self.height)
 

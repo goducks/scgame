@@ -31,8 +31,8 @@ class scgame(object):
         player = scgo.Player(self.width, self.height, id, 0.5, 1.0, 66, 28.8, color)
         self.players.append(player)
         height = localmath.NDCToSC_y(.015, self.height) * len(self.players)
-        self.lives.append(ui.renderLives(player.lives, 5, height))
-        self.score.append(ui.renderScore(player.score, self.width - (self.width / 3) - 25, height))
+        self.lives.append(ui.renderLives(player.lives, 5, height, color))
+        self.score.append(ui.renderScore(player.score, self.width - (self.width / 3) - 25, height, color))
 
     # -------------------------------------------------------------------------------
     def clear(self):
