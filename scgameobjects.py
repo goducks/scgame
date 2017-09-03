@@ -142,6 +142,9 @@ class EnemyController(draw.GameObject):
     def __init__(self, wwidth, wheight):
         EnemyController.level = 1
         EnemyController.enemies = self.createEnemies(wwidth, wheight)
+        EnemyController.shooter = 0
+        EnemyController.serverfiring = False
+        EnemyController.clientfiring = False
         EnemyController.top = self.enemies[0].y
         EnemyController.left = self.enemies[0].x
         EnemyController.right = self.enemies[-1].x + self.enemies[-1].width
@@ -182,6 +185,9 @@ class EnemyController(draw.GameObject):
         return enemies
 
     def update(self, time):
+        pass
+
+    def serverupdate(self, time):
         Enemy.vy = 0
         if Enemy.move:
             distancemoved = lm.NDCToSC_x(Enemy.vx * time, self.wwidth)
@@ -194,8 +200,9 @@ class EnemyController(draw.GameObject):
             Enemy.vy = .5
             EnemyController.counter = 15
         if EnemyController.timer == self.shoottime:
-            shooter = randint(0, len(self.enemies) - 1)
-            self.enemies[shooter].shoot()
+            self.serverfiring = True
+            self.shooter = randint(0, len(self.enemies) - 1)
+            self.enemies[self.shooter].shoot()
             EnemyController.timer = 0
         if EnemyController.UFOcounter >= self.UFOtime and not EnemyController.UFOactive:
             ufo = UFO(self.wwidth, self.wheight)
@@ -211,6 +218,37 @@ class EnemyController(draw.GameObject):
             EnemyController.counter += time
         EnemyController.timer += 1
         EnemyController.UFOcounter += time
+
+    def clientupdate(self, time):
+        Enemy.vy = 0
+        if Enemy.move:
+            distancemoved = lm.NDCToSC_x(Enemy.vx * time, self.wwidth)
+        else:
+            distancemoved = 0
+        EnemyController.left += distancemoved
+        EnemyController.right += distancemoved
+        if EnemyController.right > Enemy.maxwidth or EnemyController.left < Enemy.minwidth:
+            Enemy.vx = -Enemy.vx
+            Enemy.vy = .5
+            EnemyController.counter = 15
+        if EnemyController.UFOcounter >= self.UFOtime and not EnemyController.UFOactive:
+            ufo = UFO(self.wwidth, self.wheight)
+            EnemyController.UFOactive = True
+            EnemyController.UFOcounter = 0
+            EnemyController.enemies.append(ufo)
+        if EnemyController.counter >= .75:
+            Enemy.move = True
+            sdlmixer.Mix_PlayChannel(-1, self.sound, 0)
+            EnemyController.counter = 0
+        else:
+            Enemy.move = False
+            EnemyController.counter += time
+        EnemyController.timer += 1
+        EnemyController.UFOcounter += time
+
+    def fire(self):
+        self.enemies[self.shooter].shoot()
+        EnemyController.timer = 0
 
     def checkWin(self, player):
         enemyheight = self.enemies[-1].y + self.enemies[0].height
@@ -287,7 +325,6 @@ class EnemyBullet(draw.filledRect):
         self.y += lm.NDCToSC_y(self.vy * time, self.maxheight)
 
     def remove(self):
-        # print "removing enemybullet"
         self.delete()
 
 class Shield(draw.spriteMaker):

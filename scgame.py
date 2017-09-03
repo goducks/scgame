@@ -4,6 +4,7 @@ import drawable as draw
 import collision
 import ui
 import scgameobjects as scgo
+import localmath
 
 
 class scgame(object):
@@ -29,8 +30,9 @@ class scgame(object):
         print "adding player"
         player = scgo.Player(self.width, self.height, id, 0.5, 1.0, 66, 28.8, color)
         self.players.append(player)
-        self.lives.updateLives(player.lives)
-        self.score.updateScore(player.score)
+        height = localmath.NDCToSC_y(.015, self.height) * len(self.players)
+        self.lives.append(ui.renderLives(player.lives, 5, height))
+        self.score.append(ui.renderScore(player.score, self.width - (self.width / 3) - 25, height))
 
     # -------------------------------------------------------------------------------
     def clear(self):
@@ -69,7 +71,7 @@ class scgame(object):
             for player in self.players:
                 # print "player " + str(player.id) + " at " + str(player.x)
                 player.update(time)
-            self.enemycontrol.update(time)
+            self.enemycontrol.serverupdate(time)
             for player in self.players:
                 if self.enemycontrol.checkWin(player):
                     self.gameover(player)
@@ -167,10 +169,10 @@ class scgame(object):
         player = scgo.Player(self.width, self.height, 0, 0.5, 1.0, 66, 28.8)
         self.players.append(player)
 
-        self.lives = ui.renderLives(player.lives, 5, 5)
-        self.score = ui.renderScore(player.score, self.width - (self.width / 3) - 25, 5)
-        # self.lives = ui.renderLives(0, 5, 5)
-        # self.score = ui.renderScore(0, self.width - (self.width / 3) - 25, 5)
+        self.lives = list()
+        self.lives.append(ui.renderLives(player.lives, 5, 5))
+        self.score = list()
+        self.score.append(ui.renderScore(player.score, self.width - (self.width / 3) - 25, 5))
 
         self.enemycontrol = scgo.EnemyController(self.width, self.height)
 

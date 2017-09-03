@@ -32,3 +32,8 @@ class Proto():
     clientmove  =     b'0x000C'
     clientfire  =     b'0x000D'
     addtoclient =     b'0x000E'
+    moveother   =     b'0x000F'
+    fireother   =     b'0x0004'
+    lostlife    =     b'0x0005'
+    scoreup     =     b'0x0006'
+    enemyfire   =     b'0x0007'
