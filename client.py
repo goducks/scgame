@@ -8,7 +8,6 @@ import sdl2.ext
 import sdl2
 import drawable as draw
 import scgameobjects as scgo
-import ui
 import collision
 
 # Globals
@@ -41,7 +40,7 @@ class Client(scgame.scgame):
         colorstr = "%s:%s:%s" % (color.r, color.g, color.b)
         # add to clientmap
         self.players[0].id = self.id
-        self.clientmap[self.id] = {'vx': 0, 'fire': False, 'livesUI': 3, 'scoreUI': 0}
+        self.clientmap[self.id] = {'vx': 0, 'fire': False, 'lives': 3, 'score': 0}
         # send connection message that will register server with client
         print "Connecting to server..."
         self.send(Proto.greet, colorstr)
@@ -167,7 +166,7 @@ class Client(scgame.scgame):
                 color = sdl2.ext.Color(int(split[1]), int(split[2]), int(split[3]), 255)
                 print color
                 self.addPlayer(otherid, color)
-                self.clientmap[otherid] = {'vx': 0, 'fire': False, 'livesUI': 3, 'scoreUI': 0}
+                self.clientmap[otherid] = {'vx': 0, 'fire': False, 'lives': 3, 'score': 0}
                 print "number of players %d" % len(self.players)
                 break
             if case(Proto.removeclient):
@@ -190,10 +189,10 @@ class Client(scgame.scgame):
             if case(Proto.lostlife):
                 split = body.split(":")
                 id = split[0]
-                self.clientmap[id]['livesUI'] = int(split[1])
+                self.clientmap[id]['lives'] = int(split[1])
                 # print self.clientmap
                 for player in self.players:
-                    player.lives = self.clientmap[player.id]['livesUI']
+                    player.lives = self.clientmap[player.id]['lives']
                     self.livesUI[player.id].updateLives(player.lives)
                 for bullet in self.enemycontrol.bullets:
                     self.enemycontrol.removebullet(bullet)
@@ -201,21 +200,31 @@ class Client(scgame.scgame):
             if case(Proto.scoreup):
                 split = body.split(":")
                 id = split[0]
-                self.clientmap[id]['scoreUI'] = int(split[1])
-                self.enemycontrol.enemies[int(split[2])].remove()
-                self.enemycontrol.enemies.remove(self.enemycontrol.enemies[int(split[2])])
-                index = 0
-                for player in self.players:
-                    # print str(player.id) + " scoreUI is " + str(player.scoreUI) + " index is " + str(index)
-                    player.score = self.clientmap[player.id]['scoreUI']
-                    self.scoreUI[player.id].updateScore(player.score)
-                    index += 1
-                    for bullet in player.bullets:
-                        player.removebullet(bullet)
+                # update score
+                player = self.players[0]
+                player.score = int(split[1])
+                self.clientmap[id]['score'] = player.score
+                self.scoreUI[id].updateScore(player.score)
+                # remove destroyed enemy
+                enemyIdx = int(split[2])
+                enemy = self.enemycontrol.enemies[enemyIdx]
+                enemy.remove()
+                self.enemycontrol.enemies.remove(enemy)
+                for bullet in player.bullets:
+                    player.removebullet(bullet)
                 break
             if case(Proto.enemyfire):
                 self.enemycontrol.shooter = int(body)
                 self.enemycontrol.clientfiring = True
+                break
+            if case(Proto.eclocupdate):
+                split = body.split(":")
+                left = float(split[0])
+                right = float(split[1])
+				# TODO
+                # self.enemycontrol.left = left
+                # self.enemycontrol.right = right
+                print "enemy control locupdate, l: " + str(left) + " r: " + str(right)
                 break
             if case():  # default
                 print "Client: received undefined message!"
@@ -231,7 +240,6 @@ class Client(scgame.scgame):
         for event in events:
             if event.type == sdl2.SDL_QUIT:
                 return False
-                break
             for player in self.players:
                 if player.id == self.id:
                     player.getInput(event, self.players.index(player))

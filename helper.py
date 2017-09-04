@@ -39,3 +39,4 @@ class Proto():
     addclient         = b'0x000E'
     removeclient      = b'0x000F'
     lostlife          = b'0x0010'
+    eclocupdate       = b'0x0011'

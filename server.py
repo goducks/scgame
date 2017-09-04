@@ -249,15 +249,24 @@ class Server(scgame.scgame):
                     player.fire()
                     self.clientmap[player.id]['fire'] = False
                 player.update(time)
+
             self.enemycontrol.serverupdate(time)
+
             if self.enemycontrol.serverfiring:
                 self.enemyFire(self.enemycontrol.shooter)
                 self.enemycontrol.serverfiring = False
+
+            # update all players
             for player in self.players:
+                if self.enemycontrol.serverMove:
+                    body = "%s:%s" % (self.enemycontrol.left, self.enemycontrol.right)
+                    self.send(player.id, Proto.eclocupdate, body)
                 if self.enemycontrol.checkWin(player):
                     # notify the client
                     self.send(player.id, Proto.clientwin)
                     self.gameover(player)
+            self.enemycontrol.serverMove = False
+
             for enemy in self.enemycontrol.enemies:
                 enemy.update(time)
 
