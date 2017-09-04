@@ -1,11 +1,11 @@
 from options import Options
+from random import randint
 import sdl2.ext
 import drawable as draw
 import collision
 import ui
 import scgameobjects as scgo
 import localmath
-
 
 class scgame(object):
     def __init__(self):
@@ -17,8 +17,8 @@ class scgame(object):
         self.players = list()
         self.enemycontrol = None
         self.shields = list()
-        self.lives = None
-        self.score = None
+        self.livesUI = dict()
+        self.scoreUI = dict()
         self.fpsCounter = None
         self.limitFrame = None
         self.options = Options().opts
@@ -26,13 +26,28 @@ class scgame(object):
         self.lastDelta = 0
         self.move = False
 
-    def addPlayer(self, id, color):
-        print "adding player"
+    # -------------------------------------------------------------------------------
+    def addPlayer(self, id, color=sdl2.ext.Color(randint(0, 255), randint(0, 255), randint(0, 255), 255)):
+        # print "adding player"
         player = scgo.Player(self.width, self.height, id, 0.5, 1.0, 66, 28.8, color)
         self.players.append(player)
         height = localmath.NDCToSC_y(.015, self.height) * len(self.players)
-        self.lives.append(ui.renderLives(player.lives, 5, height, color))
-        self.score.append(ui.renderScore(player.score, self.width - (self.width / 3) - 25, height, color))
+        self.livesUI[id] = ui.renderLives(player.lives, 5, height, color)
+        self.scoreUI[id] = ui.renderScore(player.score, self.width - (self.width / 3) - 25, height, color)
+
+    # -------------------------------------------------------------------------------
+    def removePlayer(self, id):
+        for player in self.players:
+            if player.id == id:
+                player.remove()
+                self.players.remove(player)
+                if id in self.livesUI:
+                    self.livesUI[id].delete()
+                    del self.livesUI[id]
+                if id in self.scoreUI:
+                    self.scoreUI[id].delete()
+                    del self.scoreUI[id]
+            # print "removing player"
 
     # -------------------------------------------------------------------------------
     def clear(self):
@@ -46,11 +61,11 @@ class scgame(object):
         # Empty the current drawlist
         draw.Drawable.clearAll()
         # Add ONLY the gameover text
-        gameover = draw.textMaker("GAME OVER", self.width / 5, (self.height / 2) - 50, 40,
-                                fontname="8-BIT WONDER.TTF")
+        draw.textMaker("GAME OVER", self.width / 5, (self.height / 2) - 50, 40,
+                       fontname="8-BIT WONDER.TTF")
         text = "SCORE " + str(player.score)
-        score = draw.textMaker(text, self.width / 5, (self.height / 2), 30,
-                             fontname="8-BIT WONDER.TTF")
+        draw.textMaker(text, self.width / 5, (self.height / 2), 30,
+                       fontname="8-BIT WONDER.TTF")
         # Signal update function to end
         self.gameIsActive = False
 
@@ -95,7 +110,7 @@ class scgame(object):
                         # print "enemy hit"
                         self.enemycontrol.removebullet(ebullet)
                         player.lostlife()
-                        self.lives.updateLives(player.lives)
+                        self.livesUI[player.id].updateLives(player.lives)
                         if player.lives <= 0:
                             self.gameover(player)
                         break
@@ -116,7 +131,7 @@ class scgame(object):
                         hit = collision.checkCollision(bullet, enemy)
                         if hit:
                             player.score += enemy.points
-                            self.score.updateScore(player.score)
+                            self.scoreUI[player.id].updateScore(player.score)
                             enemy.remove()
                             self.enemycontrol.enemies.remove(enemy)
                             player.removebullet(bullet)
@@ -141,60 +156,6 @@ class scgame(object):
         self.renderer.present()
 
     # -------------------------------------------------------------------------------
-    def setup(self):
-        # create window
-        self.width = self.options.width
-        self.height = self.options.height
-        windowtitle = "Space Invaders"
-        if self.options.server:
-            windowtitle += " - Server"
-        else:
-            windowtitle += " - Client"
-        self.window = sdl2.ext.Window(windowtitle, size=(self.width, self.height))
-        self.window.show()
-
-        # create renderer starting with a base sdl2ext renderer
-        self.renderer = sdl2.ext.Renderer(self.window)
-        # set all our renderer instance types
-        draw.filledRect.setRenderer(self.renderer)
-        draw.spriteMaker.setRenderer(self.renderer)
-        draw.textMaker.setRenderer(self.renderer)
-
-        ###########################################################################
-
-        ###########################################################################
-        # Our game object setup
-        ###########################################################################
-        # create player object
-        player = scgo.Player(self.width, self.height, 0, 0.5, 1.0, 66, 28.8)
-        self.players.append(player)
-
-        self.lives = list()
-        self.lives.append(ui.renderLives(player.lives, 5, 5))
-        self.score = list()
-        self.score.append(ui.renderScore(player.score, self.width - (self.width / 3) - 25, 5))
-
-        self.enemycontrol = scgo.EnemyController(self.width, self.height)
-
-        # creates shields
-        x = .1
-        while x <= .75:
-            shield = scgo.Shield(x, .8, self.width, self.height)
-            self.shields.append(shield)
-            x += .30
-
-        self.limitFrame = False
-        frameRateLimit = 1.0
-        if (self.options.limitFrameRate):
-            self.limitFrame = True
-            frameRateLimit = self.options.limitFrameRate
-            print "--frame rate limit(%d)--" % frameRateLimit
-        self.minFrameSecs = 1.0 / frameRateLimit
-
-        if self.options.debug:
-            self.fpsCounter = draw.textMaker("FPS: 0", self.width - 55, self.height - 14, 12,
-                                      fontname="Arial.ttf")
-
     def run(self):
         running = True
         # Update only if active

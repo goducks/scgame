@@ -35,13 +35,13 @@ class Client(scgame.scgame):
         self.clientmap = dict()
         # setup game
         super(Client, self).__init__()
-        self.setup()
+        self.setup(self.id)
         # get player color
         color = self.players[0].colormod
         colorstr = "%s:%s:%s" % (color.r, color.g, color.b)
         # add to clientmap
         self.players[0].id = self.id
-        self.clientmap[self.id] = {'vx': 0, 'fire': False, 'lives': 3, 'score': 0}
+        self.clientmap[self.id] = {'vx': 0, 'fire': False, 'livesUI': 3, 'scoreUI': 0}
         # send connection message that will register server with client
         print "Connecting to server..."
         self.send(Proto.greet, colorstr)
@@ -57,7 +57,7 @@ class Client(scgame.scgame):
         # Client's idle loop
         timeout = 1
         self.lastDelta = 0.0
-        quitLimit = 2.0
+        quitLimit = 5.0
         quitTimer = 0.0
         pingLimit = 5.0
         pingTimer = 0.0
@@ -75,7 +75,9 @@ class Client(scgame.scgame):
             if self.socket in sockets and sockets[self.socket] == zmq.POLLIN:
                 msg = self.socket.recv()
                 if not self.parseMsg(msg):
-                    break
+                    # gameover state
+                    self.gameover()
+                    continue
 
             super(Client, self).run()
 
@@ -144,14 +146,36 @@ class Client(scgame.scgame):
                 self.send(Proto.clientstop)
                 ret = False
                 break
-            if case(Proto.addtoclient):
+            if case(Proto.clientwin):
+                print "Client: clientwin"
+                self.svr_connect = False
+                self.send(Proto.clientstop)
+                player = self.players[0]
+                self.gameover(player)
+                break
+            if case(Proto.clientlose):
+                print "Client: clientlose"
+                self.svr_connect = False
+                self.send(Proto.clientstop)
+                player = self.players[0]
+                self.gameover(player)
+                break
+            if case(Proto.addclient):
                 split = body.split(":")
                 otherid = split[0]
-                print "got addtoclient for " + otherid
+                print "got addclient for " + otherid
                 color = sdl2.ext.Color(int(split[1]), int(split[2]), int(split[3]), 255)
                 print color
                 self.addPlayer(otherid, color)
-                self.clientmap[otherid] = {'vx': 0, 'fire': False, 'lives': 3, 'score': 0}
+                self.clientmap[otherid] = {'vx': 0, 'fire': False, 'livesUI': 3, 'scoreUI': 0}
+                print "number of players %d" % len(self.players)
+                break
+            if case(Proto.removeclient):
+                split = body.split(":")
+                otherid = split[0]
+                print "got removeclient for " + otherid
+                self.removePlayer(otherid)
+                del self.clientmap[otherid]
                 print "number of players %d" % len(self.players)
                 break
             if case(Proto.moveother):
@@ -166,27 +190,25 @@ class Client(scgame.scgame):
             if case(Proto.lostlife):
                 split = body.split(":")
                 id = split[0]
-                self.clientmap[id]['lives'] = int(split[1])
+                self.clientmap[id]['livesUI'] = int(split[1])
                 # print self.clientmap
-                index = 0
                 for player in self.players:
-                    player.lives = self.clientmap[player.id]['lives']
-                    self.lives[index].updateLives(player.lives)
-                    index += 1
+                    player.lives = self.clientmap[player.id]['livesUI']
+                    self.livesUI[player.id].updateLives(player.lives)
                 for bullet in self.enemycontrol.bullets:
                     self.enemycontrol.removebullet(bullet)
                 break
             if case(Proto.scoreup):
                 split = body.split(":")
                 id = split[0]
-                self.clientmap[id]['score'] = int(split[1])
+                self.clientmap[id]['scoreUI'] = int(split[1])
                 self.enemycontrol.enemies[int(split[2])].remove()
                 self.enemycontrol.enemies.remove(self.enemycontrol.enemies[int(split[2])])
                 index = 0
                 for player in self.players:
-                    # print str(player.id) + " score is " + str(player.score) + " index is " + str(index)
-                    player.score = self.clientmap[player.id]['score']
-                    self.score[index].updateScore(player.score)
+                    # print str(player.id) + " scoreUI is " + str(player.scoreUI) + " index is " + str(index)
+                    player.score = self.clientmap[player.id]['scoreUI']
+                    self.scoreUI[player.id].updateScore(player.score)
                     index += 1
                     for bullet in player.bullets:
                         player.removebullet(bullet)
@@ -277,7 +299,7 @@ class Client(scgame.scgame):
         self.renderer.present()
 
     # -------------------------------------------------------------------------------
-    def setup(self):
+    def setup(self, localPID):
         # create window
         self.width = self.options.width
         self.height = self.options.height
@@ -302,14 +324,7 @@ class Client(scgame.scgame):
         # Our game object setup
         ###########################################################################
         # create player object
-        player = scgo.Player(self.width, self.height, 0, 0.5, 1.0, 66, 28.8)
-        self.players.append(player)
-
-        self.lives = list()
-        self.lives.append(ui.renderLives(player.lives, 5, 5, color=self.players[0].colormod))
-        self.score = list()
-        self.score.append(ui.renderScore(player.score, self.width - (self.width / 3) - 25, 5,
-                          color=self.players[0].colormod))
+        self.addPlayer(localPID)
 
         self.enemycontrol = scgo.EnemyController(self.width, self.height)
 

@@ -22,18 +22,20 @@ class switch(object):
 
 class Proto():
     # this is just a namespace for storing protocol IDs
-    # TODO: this is ghetto
-    headerlen   = 6
-    greet       =     b'0x0001'
-    str         =     b'0x0002'
-    ping        =     b'0x0003'
-    fireother   =     b'0x0004'
-    lostlife    =     b'0x0005'
-    scoreup     =     b'0x0006'
-    enemyfire   =     b'0x0007'
-    serverstop  =     b'0x000A'
-    clientstop  =     b'0x000B'
-    clientmove  =     b'0x000C'
-    clientfire  =     b'0x000D'
-    addtoclient =     b'0x000E'
-    moveother   =     b'0x000F'
+    headerlen         = 6
+    greet             = b'0x0001'
+    str               = b'0x0002'
+    ping              = b'0x0003'
+    serverstop        = b'0x0004'
+    clientstop        = b'0x0005'
+    clientwin         = b'0x0006'
+    clientlose        = b'0x0007'
+    scoreup           = b'0x0008'
+    clientfire        = b'0x0009'
+    enemyfire         = b'0x000A'
+    fireother         = b'0x000B'
+    clientmove        = b'0x000C'
+    moveother         = b'0x000D'
+    addclient         = b'0x000E'
+    removeclient      = b'0x000F'
+    lostlife          = b'0x0010'

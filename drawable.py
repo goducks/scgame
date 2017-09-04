@@ -211,6 +211,11 @@ class textMaker(GameObject):
         # at some point we need to ensure we are cleaning up properly
         # TTF_CloseFont(self.font)
 
+    # on class instance destroy, remove from drawList
+    def delete(self):
+        # print "removing from drawlist"
+        Drawable.drawList.remove(self)
+
     def _createTexture(self):
         textSurface = TTF_RenderText_Shaded(self.font, self._text, self.textColor, self.backgroundColor)
         if textSurface is None:

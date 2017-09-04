@@ -4,12 +4,10 @@ import sdl2
 import sdl2.sdlmixer as sdlmixer
 import drawable as draw
 import localmath as lm
-import scgame
 
 class Player(draw.spriteMaker):
 
-    def __init__(self, wwidth, wheight, id, posx=0.0, posy=0.0, width=0.0, height=0.0,
-                 color=sdl2.ext.Color(randint(0, 255), randint(0, 255), randint(0, 255), 255)):
+    def __init__(self, wwidth, wheight, id, posx, posy, width, height, color):
         playerwidth, playerheight = lm.SC(width, height)
         playerposx, playerposy = lm.NDCToSC(posx, posy, wwidth, wheight)
         playerposx -= playerheight + playerheight / 2
@@ -34,6 +32,11 @@ class Player(draw.spriteMaker):
         # states set by messages
         self.move = False
         self.shoot = False
+
+    def remove(self):
+        for bullet in self.bullets:
+            bullet.remove()
+        self.delete()
 
     def fire(self):
         for bullet in self.bullets:

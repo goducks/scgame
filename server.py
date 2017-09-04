@@ -137,16 +137,16 @@ class Server(scgame.scgame):
                 self.fireClients(id)
                 break
             if case(Proto.lostlife):
-
                 break
             if case():  # default
                 print "Server: received undefined message!"
                 # TODO: debug
 
         # update receive stats
-        usage = self.clientmap[id]
-        usage['imc'] += 1
-        usage['ibr'] += (Proto.headerlen + len(body))
+        if (id in self.clientmap):
+            usage = self.clientmap[id]
+            usage['imc'] += 1
+            usage['ibr'] += (Proto.headerlen + len(body))
 
     def addClient(self, id, body):
         if id in self.clientmap:
@@ -159,7 +159,7 @@ class Server(scgame.scgame):
             self.addPlayer(id, body)
             # add to clientmap
             self.clientmap[id] = {'imc': 0, 'ibr': 0, 'omc': 0, 'obs': 0, 'vx': 0,
-                                  'fire': False, 'color': colorstr, 'lives': 3, 'score': 0}
+                                  'fire': False, 'color': colorstr, 'livesUI': 3, 'scoreUI': 0}
             # reply with ack
             self.send(id, Proto.greet)
 
@@ -170,10 +170,10 @@ class Server(scgame.scgame):
                     body = "%s:%s" % (id, colorstr)
                     print "added new client: " + id + " to " + otherid + " body: " + body
                     # first add new to other
-                    self.send(otherid, Proto.addtoclient, body)
+                    self.send(otherid, Proto.addclient, body)
                     # now add other to new
                     body = "%s:%s" % (otherid, othercolor)
-                    self.send(id, Proto.addtoclient, body)
+                    self.send(id, Proto.addclient, body)
 
             print self.clientmap
 
@@ -184,6 +184,9 @@ class Server(scgame.scgame):
         else:
             print "Attempt to remove unregistered client"
             # TODO: debug
+        self.removePlayer(id)
+        for otherid in self.clientmap.iterkeys():
+            self.send(otherid, Proto.removeclient, id)
 
     def run(self):
         running = True
@@ -212,13 +215,13 @@ class Server(scgame.scgame):
                 self.send(otherid, Proto.fireother, id)
 
     def livesChange(self, id, lives):
-        self.clientmap[id]['lives'] = lives
+        self.clientmap[id]['livesUI'] = lives
         for otherid in self.clientmap.iterkeys():
             body = "%s:%s" % (id, lives)
             self.send(otherid, Proto.lostlife, body)
 
     def scoreChange(self, id, score, index):
-        self.clientmap[id]['score'] = score
+        self.clientmap[id]['scoreUI'] = score
         for otherid in self.clientmap.iterkeys():
             body = "%s:%s:%s" % (id, score, index)
             self.send(otherid, Proto.scoreup, body)
@@ -252,6 +255,8 @@ class Server(scgame.scgame):
                 self.enemycontrol.serverfiring = False
             for player in self.players:
                 if self.enemycontrol.checkWin(player):
+                    # notify the client
+                    self.send(player.id, Proto.clientwin)
                     self.gameover(player)
             for enemy in self.enemycontrol.enemies:
                 enemy.update(time)
@@ -277,10 +282,10 @@ class Server(scgame.scgame):
                         self.enemycontrol.removebullet(ebullet)
                         player.lostlife()
                         self.livesChange(player.id, player.lives)
-                        self.lives[index].updateLives(player.lives)
-                        print self.clientmap
+                        self.livesUI[player.id].updateLives(player.lives)
+                        # print self.clientmap
                         if player.lives <= 0:
-                            self.gameover(player)
+                            self.send(player.id, Proto.clientlose)
                         break
                     index += 1
 
@@ -303,7 +308,7 @@ class Server(scgame.scgame):
                         if hit:
                             player.score += enemy.points
                             self.scoreChange(player.id, player.score, enemyindex)
-                            self.score[index].updateScore(player.score)
+                            self.scoreUI[player.id].updateScore(player.score)
                             enemy.remove()
                             self.enemycontrol.enemies.remove(enemy)
                             player.removebullet(bullet)
@@ -334,16 +339,6 @@ class Server(scgame.scgame):
         ###########################################################################
         # Our game object setup
         ###########################################################################
-        # create player object
-        # player = scgo.Player(self.width, self.height, 0, 0.5, 1.0, 66, 28.8)
-        # self.players.append(player)
-
-        # self.lives = ui.renderLives(player.lives, 5, 5)
-        # self.score = ui.renderScore(player.score, self.width - (self.width / 3) - 25, 5)
-        self.lives = list()
-        # self.lives.append(ui.renderLives(0, 5, 5))
-        self.score = list()
-        # self.score.append(ui.renderScore(0, self.width - (self.width / 3) - 25, 5))
 
         self.enemycontrol = scgo.EnemyController(self.width, self.height)
 
