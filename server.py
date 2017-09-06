@@ -159,9 +159,12 @@ class Server(scgame.scgame):
             self.addPlayer(id, body)
             # add to clientmap
             self.clientmap[id] = {'imc': 0, 'ibr': 0, 'omc': 0, 'obs': 0, 'vx': 0,
-                                  'fire': False, 'color': colorstr, 'livesUI': 3, 'scoreUI': 0}
+                                  'fire': False, 'color': colorstr, 'lives': 3, 'score': 0}
             # reply with ack
             self.send(id, Proto.greet)
+
+            # sync server game state to client
+            # TODO destroyed enemies, etc
 
             # add new player to other clients, and other clients to new
             for otherid in self.clientmap.iterkeys():
@@ -215,13 +218,13 @@ class Server(scgame.scgame):
                 self.send(otherid, Proto.fireother, id)
 
     def livesChange(self, id, lives):
-        self.clientmap[id]['livesUI'] = lives
+        self.clientmap[id]['lives'] = lives
         for otherid in self.clientmap.iterkeys():
             body = "%s:%s" % (id, lives)
             self.send(otherid, Proto.lostlife, body)
 
     def scoreChange(self, id, score, index):
-        self.clientmap[id]['scoreUI'] = score
+        self.clientmap[id]['score'] = score
         for otherid in self.clientmap.iterkeys():
             body = "%s:%s:%s" % (id, score, index)
             self.send(otherid, Proto.scoreup, body)
@@ -239,7 +242,6 @@ class Server(scgame.scgame):
         for event in events:
             if event.type == sdl2.SDL_QUIT:
                 return False
-                break
 
         if self.gameIsActive:
             for player in self.players:
@@ -256,16 +258,11 @@ class Server(scgame.scgame):
                 self.enemyFire(self.enemycontrol.shooter)
                 self.enemycontrol.serverfiring = False
 
-            # update all players
             for player in self.players:
-                if self.enemycontrol.serverMove:
-                    body = "%s:%s" % (self.enemycontrol.left, self.enemycontrol.right)
-                    self.send(player.id, Proto.eclocupdate, body)
                 if self.enemycontrol.checkWin(player):
                     # notify the client
                     self.send(player.id, Proto.clientwin)
                     self.gameover(player)
-            self.enemycontrol.serverMove = False
 
             for enemy in self.enemycontrol.enemies:
                 enemy.update(time)
@@ -333,8 +330,10 @@ class Server(scgame.scgame):
         # create window
         self.width = self.options.width
         self.height = self.options.height
-        self.window = sdl2.ext.Window("Space Invaders - Server", size=(self.width, self.height))
-        self.window.show()
+
+        self.window = sdl2.ext.Window("Space Invaders - Server", size=(self.width, self.height),
+                                      position=(0,0))
+    	self.window.show()
 
         # create renderer starting with a base sdl2ext renderer
         self.renderer = sdl2.ext.Renderer(self.window)

@@ -145,7 +145,6 @@ class EnemyController(draw.GameObject):
         EnemyController.enemies = self.createEnemies(wwidth, wheight)
         EnemyController.shooter = 0
         EnemyController.serverfiring = False
-        EnemyController.serverMove = False
         EnemyController.clientfiring = False
         EnemyController.top = self.enemies[0].y
         EnemyController.left = self.enemies[0].x
@@ -193,7 +192,6 @@ class EnemyController(draw.GameObject):
         Enemy.vy = 0
         if Enemy.move:
             distancemoved = lm.NDCToSC_x(Enemy.vx * time, self.wwidth)
-            self.serverMove = True
         else:
             distancemoved = 0
         EnemyController.left += distancemoved

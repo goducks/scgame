@@ -75,7 +75,7 @@ class Client(scgame.scgame):
                 msg = self.socket.recv()
                 if not self.parseMsg(msg):
                     # gameover state
-                    self.gameover()
+                    self.gameover(self.players[0])
                     continue
 
             super(Client, self).run()
@@ -221,7 +221,7 @@ class Client(scgame.scgame):
                 split = body.split(":")
                 left = float(split[0])
                 right = float(split[1])
-				# TODO
+                # TODO
                 # self.enemycontrol.left = left
                 # self.enemycontrol.right = right
                 print "enemy control locupdate, l: " + str(left) + " r: " + str(right)
@@ -316,7 +316,9 @@ class Client(scgame.scgame):
             windowtitle += " - Server"
         else:
             windowtitle += " - Client"
-        self.window = sdl2.ext.Window(windowtitle, size=(self.width, self.height))
+
+        self.window = sdl2.ext.Window(windowtitle, size=(self.width, self.height),
+                                      position=(self.width + 64, 0))
         self.window.show()
 
         # create renderer starting with a base sdl2ext renderer
